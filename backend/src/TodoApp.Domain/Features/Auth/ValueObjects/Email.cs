@@ -1,6 +1,6 @@
 using System.Net.Mail;
 
-namespace TodoApp.Domain.Features.Users;
+namespace TodoApp.Domain.Features.Auth;
 
 public sealed class Email : IEquatable<Email>
 {

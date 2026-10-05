@@ -1,4 +1,4 @@
-using TodoApp.Domain.Features.Users;
+using TodoApp.Domain.Features.Auth;
 
 namespace TodoApp.Domain.Tests.Users;
 

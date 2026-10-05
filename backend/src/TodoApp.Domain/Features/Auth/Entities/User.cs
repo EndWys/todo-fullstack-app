@@ -1,4 +1,4 @@
-﻿namespace TodoApp.Domain.Features.Users.Entities;
+﻿namespace TodoApp.Domain.Features.Auth;
 
 public class User
 {

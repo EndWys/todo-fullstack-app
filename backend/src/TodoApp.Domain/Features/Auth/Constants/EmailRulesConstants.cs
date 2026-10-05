@@ -1,4 +1,4 @@
-﻿namespace TodoApp.Domain.Features.Users;
+﻿namespace TodoApp.Domain.Features.Auth;
 
 public static class EmailRulesConstants
 {
