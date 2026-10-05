@@ -1,14 +1,9 @@
 using System.Net.Mail;
 
-namespace TodoApp.Domain.Users;
+namespace TodoApp.Domain.Features.Users;
 
 public sealed class Email : IEquatable<Email>
 {
-    private const int MaxEmailLength = 254;
-    private const int MaxLocalPartLength = 64;
-    private const int MaxDomainLabelLength = 63;
-    private const string AllowedLocalPartSpecialCharacters = "!#$%&'*+-/=?^_`{|}~.";
-
     private Email(string emailAddress)
     {
         EmailAddress = emailAddress;
@@ -69,9 +64,9 @@ public sealed class Email : IEquatable<Email>
 
     private static void ValidateFormat(string emailAddress)
     {
-        if (emailAddress.Length > MaxEmailLength)
+        if (emailAddress.Length > EmailRulesConstants.MaxEmailLength)
         {
-            throw new FormatException($"Email address must not exceed {MaxEmailLength} characters.");
+            throw new FormatException($"Email address must not exceed {EmailRulesConstants.MaxEmailLength} characters.");
         }
 
         if (emailAddress.Any(char.IsWhiteSpace) ||
@@ -82,11 +77,11 @@ public sealed class Email : IEquatable<Email>
         }
 
         string localPart = parsedAddress.User;
-        if (localPart.Length is 0 or > MaxLocalPartLength ||
+        if (localPart.Length is 0 or > EmailRulesConstants.MaxLocalPartLength ||
             localPart[^1] == '.' ||
             localPart.Any(character =>
                 !char.IsAsciiLetterOrDigit(character) &&
-                !AllowedLocalPartSpecialCharacters.Contains(character)))
+                !EmailRulesConstants.AllowedLocalPartSpecialCharacters.Contains(character)))
         {
             throw new FormatException("Email address has an invalid local part.");
         }
@@ -94,7 +89,7 @@ public sealed class Email : IEquatable<Email>
         string[] domainLabels = parsedAddress.Host.Split('.');
         if (domainLabels.Length < 2 ||
             domainLabels.Any(label =>
-                label.Length is 0 or > MaxDomainLabelLength ||
+                label.Length is 0 or > EmailRulesConstants.MaxDomainLabelLength ||
                 label[0] == '-' ||
                 label[^1] == '-' ||
                 label.Any(character =>
