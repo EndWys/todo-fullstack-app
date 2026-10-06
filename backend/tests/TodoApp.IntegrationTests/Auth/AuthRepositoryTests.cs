@@ -1,4 +1,3 @@
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using TodoApp.Application.Features.Auth.Register;
 using TodoApp.Domain.Features.Auth;
@@ -9,13 +8,10 @@ namespace TodoApp.IntegrationTests.Auth;
 
 public sealed class AuthRepositoryTests
 {
-    private const string TestConnectionVariable = "TODOAPP_TEST_CONNECTION_STRING";
-    private const string TestDatabaseName = "TodoAppTest";
-
     [Fact]
     public async Task ExistsByEmailAsync_WhenEmailDoesNotExist_ReturnsFalse()
     {
-        await using var dbContext = CreateDbContext();
+        await using var dbContext = TestDatabase.CreateDbContext();
         var repository = new AuthRepository(dbContext);
         var email = Email.Create($"missing-{Guid.NewGuid():N}@example.com");
 
@@ -27,7 +23,7 @@ public sealed class AuthRepositoryTests
     [Fact]
     public async Task AddAsync_PersistsUserAndPasswordHash()
     {
-        await using var dbContext = CreateDbContext();
+        await using var dbContext = TestDatabase.CreateDbContext();
         await using var transaction = await dbContext.Database.BeginTransactionAsync();
         var repository = new AuthRepository(dbContext);
         var email = Email.Create($"saved-{Guid.NewGuid():N}@example.com");
@@ -48,7 +44,7 @@ public sealed class AuthRepositoryTests
     [Fact]
     public async Task ExistsByEmailAsync_IgnoresEmailCase()
     {
-        await using var dbContext = CreateDbContext();
+        await using var dbContext = TestDatabase.CreateDbContext();
         await using var transaction = await dbContext.Database.BeginTransactionAsync();
         var repository = new AuthRepository(dbContext);
         string suffix = Guid.NewGuid().ToString("N");
@@ -63,7 +59,7 @@ public sealed class AuthRepositoryTests
     [Fact]
     public async Task AddAsync_WhenEmailAlreadyExists_IgnoresCaseAndThrowsEmailAlreadyRegistered()
     {
-        await using var dbContext = CreateDbContext();
+        await using var dbContext = TestDatabase.CreateDbContext();
         await using var transaction = await dbContext.Database.BeginTransactionAsync();
         var repository = new AuthRepository(dbContext);
         string suffix = Guid.NewGuid().ToString("N");
@@ -74,28 +70,5 @@ public sealed class AuthRepositoryTests
 
         await Assert.ThrowsAsync<EmailAlreadyRegisteredException>(() =>
             repository.AddAsync(User.Create(duplicateEmail, "second-test-hash"), CancellationToken.None));
-    }
-
-    private static AppDbContext CreateDbContext()
-    {
-        string? connectionString = Environment.GetEnvironmentVariable(TestConnectionVariable);
-        if (string.IsNullOrWhiteSpace(connectionString))
-        {
-            throw new InvalidOperationException(
-                $"Set {TestConnectionVariable} to the dedicated {TestDatabaseName} SQL Server database before running integration tests.");
-        }
-
-        var sqlConnection = new SqlConnectionStringBuilder(connectionString);
-        if (!string.Equals(sqlConnection.InitialCatalog, TestDatabaseName, StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException(
-                $"Integration tests require Database={TestDatabaseName}; the configured database is '{sqlConnection.InitialCatalog}'.");
-        }
-
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseSqlServer(sqlConnection.ConnectionString)
-            .Options;
-
-        return new AppDbContext(options);
     }
 }

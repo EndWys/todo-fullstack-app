@@ -1,29 +1,12 @@
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using TodoApp.Application.Features.Auth.Abstractions;
-using TodoApp.Application.Features.Auth.Register;
-using TodoApp.Infrastructure.Features.Auth.Persistence;
-using TodoApp.Infrastructure.Features.Auth.Register;
-using TodoApp.Infrastructure.Persistence;
+using TodoApp.Api.Setup;
 
 var builder = WebApplication.CreateBuilder(args);
-
-string connectionString = builder.Configuration.GetConnectionString("TodoApp")
-                          ?? throw new InvalidOperationException(
-                              "Connection string 'TodoApp' is not configured.");
-
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(connectionString));
-
-builder.Services.AddScoped<IAuthRepository, AuthRepository>();
-builder.Services.AddScoped<PasswordHasher<object>>();
-builder.Services.AddScoped<IPasswordHasher, AspNetPasswordHasher>();
-builder.Services.AddScoped<RegisterHandler>();
+builder.Services.AddTodoAppServices(builder.Configuration);
 
 var app = builder.Build();
-
-app.UseHttpsRedirection();
-
-// ...
-
+app.UseTodoAppPipeline();
+app.MapTodoAppEndpoints();
 app.Run();
+
+// WebApplicationFactory uses this type to start the real API in integration tests.
+public partial class Program;
