@@ -85,19 +85,42 @@ public sealed class RegisterHandlerTests
         Assert.Null(passwordHasher.PasswordHashed);
     }
 
-    [Fact]
-    public async Task HandlePropagatesInvalidEmailWithoutHashingOrSaving()
+    [Theory]
+    [InlineData(null, EmailValidationError.Required)]
+    [InlineData("   ", EmailValidationError.Required)]
+    [InlineData("not-an-email", EmailValidationError.InvalidFormat)]
+    public async Task HandleTranslatesInvalidEmailWithoutHashingOrSaving(
+        string? inputEmail,
+        EmailValidationError expectedError)
     {
         var repository = new FakeAuthRepository();
         var passwordHasher = new FakePasswordHasher(PasswordHash);
         var handler = new RegisterHandler(repository, passwordHasher);
 
-        await Assert.ThrowsAsync<FormatException>(() =>
-            handler.Handle(new RegisterCommand("not-an-email", ValidPassword), CancellationToken.None));
+        InvalidEmailException exception = await Assert.ThrowsAsync<InvalidEmailException>(() =>
+            handler.Handle(new RegisterCommand(inputEmail, ValidPassword), CancellationToken.None));
 
+        Assert.Equal(expectedError, exception.Error);
+        Assert.NotNull(exception.InnerException);
         Assert.Equal(0, repository.ExistenceCheckCount);
         Assert.Null(repository.AddedUser);
         Assert.Null(passwordHasher.PasswordHashed);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task HandleDoesNotTranslateUnrelatedExceptionsFromPasswordHasher(bool argumentException)
+    {
+        Exception failure = argumentException
+            ? new ArgumentException("Hasher configuration failed.", "email")
+            : new FormatException("Hasher configuration failed.");
+        var handler = new RegisterHandler(new FakeAuthRepository(), new ThrowingPasswordHasher(failure));
+
+        Exception? thrown = await Record.ExceptionAsync(() =>
+            handler.Handle(new RegisterCommand("user@example.com", ValidPassword), CancellationToken.None));
+
+        Assert.Same(failure, thrown);
     }
 
     [Fact]
@@ -156,5 +179,10 @@ public sealed class RegisterHandlerTests
             PasswordHashed = password;
             return passwordHash;
         }
+    }
+
+    private sealed class ThrowingPasswordHasher(Exception failure) : IPasswordHasher
+    {
+        public string HashPassword(string password) => throw failure;
     }
 }

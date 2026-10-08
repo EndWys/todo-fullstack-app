@@ -1,5 +1,4 @@
-﻿using System.Security.Authentication;
-using TodoApp.Application.Features.Auth.Abstractions;
+﻿using TodoApp.Application.Features.Auth.Abstractions;
 using TodoApp.Domain.Features.Auth;
 
 namespace TodoApp.Application.Features.Auth.Register;
@@ -17,7 +16,19 @@ public class RegisterHandler(IAuthRepository authRepository, IPasswordHasher pas
             throw new InvalidPasswordException(error);
         }
         
-        Email email = Email.Create(command.Email);
+        Email email;
+        try
+        {
+            email = Email.Create(command.Email);
+        }
+        catch (ArgumentException exception) when (exception.ParamName == "email")
+        {
+            throw new InvalidEmailException(EmailValidationError.Required, exception);
+        }
+        catch (FormatException exception)
+        {
+            throw new InvalidEmailException(EmailValidationError.InvalidFormat, exception);
+        }
 
         if (await authRepository.ExistsByEmailAsync(email, cancellationToken))
         {

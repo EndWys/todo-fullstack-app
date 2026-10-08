@@ -3,6 +3,8 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using TodoApp.Application.Features.Auth.Abstractions;
 using TodoApp.Domain.Features.Auth;
 
 namespace TodoApp.IntegrationTests.Auth;
@@ -81,6 +83,37 @@ public sealed class RegisterEndpointTests
     }
 
     [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Register_WhenHasherThrowsUnrelatedException_ReturnsServerError(bool argumentException)
+    {
+        string email = $"hasher-failure-{Guid.NewGuid():N}@example.com";
+        Exception failure = argumentException
+            ? new ArgumentException("Hasher configuration failed.", "email")
+            : new FormatException("Hasher configuration failed.");
+        using var factory = new TestApiFactory(services =>
+            services.AddScoped<IPasswordHasher>(_ => new ThrowingPasswordHasher(failure)));
+        using HttpClient client = factory.CreateSafeClient();
+
+        try
+        {
+            using HttpResponseMessage response = await client.PostAsJsonAsync(Route, new
+            {
+                email,
+                password = ValidPassword
+            });
+
+            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+            using JsonDocument body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            Assert.False(body.RootElement.TryGetProperty("errors", out _));
+        }
+        finally
+        {
+            await DeleteTestUserAsync(email);
+        }
+    }
+
+    [Theory]
     [InlineData("too-short")]
     [InlineData("               ")]
     public async Task Register_WithInvalidPassword_ReturnsPasswordError(string password)
@@ -156,5 +189,10 @@ public sealed class RegisterEndpointTests
         await using var dbContext = TestDatabase.CreateDbContext();
         Email address = Email.Create(email);
         await dbContext.Users.Where(user => user.Email == address).ExecuteDeleteAsync();
+    }
+
+    private sealed class ThrowingPasswordHasher(Exception failure) : IPasswordHasher
+    {
+        public string HashPassword(string password) => throw failure;
     }
 }

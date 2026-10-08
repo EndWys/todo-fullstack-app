@@ -36,13 +36,9 @@ public static class RegisterEndpoint
         {
             return FieldError("password", GetPasswordErrorMessage(exception.Error));
         }
-        catch (ArgumentException exception) when (exception.ParamName == "email")
+        catch (InvalidEmailException exception)
         {
-            return FieldError("email", "Email is required.");
-        }
-        catch (FormatException)
-        {
-            return FieldError("email", "Email address has an invalid format.");
+            return FieldError("email", GetEmailErrorMessage(exception.Error));
         }
         catch (EmailAlreadyRegisteredException)
         {
@@ -74,6 +70,13 @@ public static class RegisterEndpoint
         PasswordValidationError.TooShort => "Password must contain at least 15 Unicode code points.",
         PasswordValidationError.TooLong => "Password must contain no more than 256 Unicode code points.",
         _ => "Password is invalid."
+    };
+
+    private static string GetEmailErrorMessage(EmailValidationError error) => error switch
+    {
+        EmailValidationError.Required => "Email is required.",
+        EmailValidationError.InvalidFormat => "Email address has an invalid format.",
+        _ => "Email address is invalid."
     };
 
     private static IResult FieldError(
