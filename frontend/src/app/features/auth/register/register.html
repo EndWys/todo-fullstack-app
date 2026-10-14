@@ -1,0 +1,78 @@
+<section aria-labelledby="register-title">
+  <h1 id="register-title" class="h2 mb-3">Create an account</h1>
+  <p id="registration-note" class="text-body-secondary mb-4">
+    This form currently checks your details locally. Account creation is not connected yet.
+  </p>
+
+  <form
+    novalidate
+    aria-describedby="registration-note"
+    (submit)="onSubmit($event)"
+    (input)="locallyValidated.set(false)"
+  >
+    <div class="mb-3">
+      <label for="email" class="form-label">Email</label>
+      <input
+        id="email"
+        type="email"
+        autocomplete="email"
+        autocapitalize="none"
+        spellcheck="false"
+        class="form-control"
+        [formField]="registrationForm.email"
+        (blur)="normalizeEmail()"
+        [class.is-invalid]="showEmailError()"
+        [attr.aria-invalid]="showEmailError()"
+        [attr.aria-describedby]="showEmailError() ? 'email-errors' : null"
+      />
+
+      @if (showEmailError()) {
+        <div id="email-errors" class="invalid-feedback" aria-live="polite">
+          @for (error of registrationForm.email().errors(); track error.kind) {
+            <p class="mb-0">{{ error.message }}</p>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="mb-4">
+      <label for="password" class="form-label">Password</label>
+      <input
+        id="password"
+        type="password"
+        autocomplete="new-password"
+        class="form-control"
+        [formField]="registrationForm.password"
+        [class.is-invalid]="showPasswordError()"
+        [attr.aria-invalid]="showPasswordError()"
+        [attr.aria-describedby]="showPasswordError() ? 'password-help password-errors' : 'password-help'"
+      />
+      <div id="password-help" class="form-text">
+        Use 15–256 characters. Spaces are allowed, but the password cannot be only whitespace.
+        Current length: {{ passwordLength() }}.
+      </div>
+
+      @if (showPasswordError()) {
+        <div id="password-errors" class="invalid-feedback" aria-live="polite">
+          @for (error of registrationForm.password().errors(); track error.kind) {
+            <p class="mb-0">{{ error.message }}</p>
+          }
+        </div>
+      }
+    </div>
+
+    <button
+      type="submit"
+      class="btn btn-primary"
+      [disabled]="registrationForm().submitting()"
+    >
+      Check registration details
+    </button>
+
+    @if (locallyValidated()) {
+      <p class="mt-3 mb-0" role="status">
+        Local validation passed. No account has been created; API integration is not connected yet.
+      </p>
+    }
+  </form>
+</section>
