@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
@@ -12,6 +11,9 @@ import {
 } from '@angular/forms/signals';
 import { firstValueFrom } from 'rxjs';
 import { AuthApi } from '../auth-api';
+import { normalizeEmail } from '../email-normalization';
+import { validatePassword } from './register-validation';
+import { parseRegistrationError, RegistrationFailure } from './registration-error';
 
 @Component({
   imports: [FormField],
@@ -47,35 +49,13 @@ export class Register {
     email(path.email, { message: 'Enter a valid email address.' });
     required(path.password, { message: 'Password is required.' });
 
-    validate(path.password, ({ value }) => {
-      const password = value();
-      if (password.length === 0) {
-        return undefined;
-      }
-
-      // Unicode White_Space matches the whitespace rule used by the backend.
-      if (/^\p{White_Space}+$/u.test(password)) {
-        return { kind: 'whitespace', message: 'Password cannot contain only whitespace.' };
-      }
-
-      const length = [...password].length;
-      if (length < 15) {
-        return { kind: 'tooShort', message: 'Use at least 15 characters.' };
-      }
-
-      if (length > 256) {
-        return { kind: 'tooLong', message: 'Use no more than 256 characters.' };
-      }
-
-      return undefined;
-    });
+    validate(path.password, ({ value }) => validatePassword(value()));
   });
 
   protected normalizeEmail(): void {
-    // .NET String.Trim uses Unicode White_Space, unlike JavaScript trim().
     this.model.update((value) => ({
       ...value,
-      email: value.email.replace(/^\p{White_Space}+|\p{White_Space}+$/gu, ''),
+      email: normalizeEmail(value.email),
     }));
   }
 
@@ -95,17 +75,7 @@ export class Register {
         this.registeredEmail.set(response.email);
         return undefined;
       } catch (error: unknown) {
-        const fieldErrors = this.getServerFieldErrors(error);
-        if (fieldErrors.length > 0) {
-          return fieldErrors;
-        }
-        return {
-          kind: 'request',
-          message:
-            error instanceof HttpErrorResponse && error.status === 0
-              ? 'The server could not be reached or the request timed out. Registration could not be confirmed.'
-              : 'Registration could not be confirmed. Please try again.',
-        };
+        return this.toFormErrors(parseRegistrationError(error));
       }
     });
 
@@ -114,34 +84,22 @@ export class Register {
     }
   }
 
-  private getServerFieldErrors(error: unknown): ValidationError.WithFieldTree[] {
-    if (!(error instanceof HttpErrorResponse) || (error.status !== 400 && error.status !== 409)) {
-      return [];
+  private toFormErrors(failure: RegistrationFailure): ValidationError.WithOptionalFieldTree[] {
+    if (failure.kind === 'validation') {
+      return failure.errors.map(({ field, message }) => ({
+        fieldTree: this.registrationForm[field],
+        kind: 'server',
+        message,
+      }));
     }
-    const body: unknown = error.error;
-    if (typeof body !== 'object' || body === null || !('errors' in body)) {
-      return [];
-    }
-    const errors = body.errors;
-    if (typeof errors !== 'object' || errors === null) {
-      return [];
-    }
-    const fields = errors as Record<string, unknown>;
-    return (['email', 'password'] as const).flatMap((field) => {
-      const messages = fields[field];
-      if (!Array.isArray(messages) || !messages.every((message) => typeof message === 'string')) {
-        return [];
-      }
-      const message = messages.join(' ').trim();
-      return message
-        ? [
-            {
-              fieldTree: this.registrationForm[field],
-              kind: 'server',
-              message,
-            },
-          ]
-        : [];
-    });
+    return [
+      {
+        kind: 'request',
+        message:
+          failure.kind === 'network'
+            ? 'The server could not be reached or the request timed out. Registration could not be confirmed.'
+            : 'Registration could not be confirmed. Please try again.',
+      },
+    ];
   }
 }
