@@ -5,8 +5,9 @@ This is the first full-stack TodoApp feature. It describes observable behavior; 
 ## Implementation status
 
 - Backend registration, EF Core SQL Server persistence, the `InitialUsers` migration, password hashing, and unit/integration test code are implemented.
-- Angular has an English-language application shell and a lazy-loaded registration Signal Form at `/register`, with local email/password validation. The UI does not send HTTP requests or create accounts yet.
-- Login, current-user lookup, logout, cookie sessions, CSRF protection, and the functional Angular authentication UI remain planned requirements below.
+- Angular has an English-language application shell and a lazy-loaded registration Signal Form at `/register`, with local validation and HTTP registration through `AuthApi`. It displays field errors for `400`/`409`, general request errors, and success after `201`; it clears the password and does not sign in.
+- Angular HTTP behavior is covered with a simulated HTTP backend. This does not prove a successful registration through a running frontend/API/SQL Server environment; verify that separately using [registration-local-setup.md](registration-local-setup.md).
+- Login, current-user lookup, logout, cookie sessions, CSRF protection, and their Angular UI remain planned requirements below.
 - Registration field errors use `ValidationProblem` with `errors.email` / `errors.password`; success returns only `id` and `email` and does not set an authentication cookie.
 - Test code and migration files do not prove that tests passed or that a particular database has the migration applied. Verify those separately when working on the feature.
 

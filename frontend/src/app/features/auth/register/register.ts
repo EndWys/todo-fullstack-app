@@ -1,5 +1,17 @@
-import { Component, computed, signal } from '@angular/core';
-import { email, form, FormField, required, submit, validate } from '@angular/forms/signals';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {
+  email,
+  form,
+  FormField,
+  required,
+  submit,
+  validate,
+  ValidationError,
+} from '@angular/forms/signals';
+import { firstValueFrom } from 'rxjs';
+import { AuthApi } from '../auth-api';
 
 @Component({
   imports: [FormField],
@@ -8,12 +20,14 @@ import { email, form, FormField, required, submit, validate } from '@angular/for
   templateUrl: './register.html',
 })
 export class Register {
+  private readonly authApi = inject(AuthApi);
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly model = signal({
     email: '',
     password: '',
   });
 
-  protected readonly locallyValidated = signal(false);
+  protected readonly registeredEmail = signal('');
   protected readonly passwordLength = computed(() => [...this.model().password].length);
 
   protected readonly showEmailError = computed(() => {
@@ -57,18 +71,77 @@ export class Register {
     });
   });
 
-
   protected normalizeEmail(): void {
-    this.model.update((value) => ({ ...value, email: value.email.trim() }));
+    // .NET String.Trim uses Unicode White_Space, unlike JavaScript trim().
+    this.model.update((value) => ({
+      ...value,
+      email: value.email.replace(/^\p{White_Space}+|\p{White_Space}+$/gu, ''),
+    }));
   }
 
   protected async onSubmit(event: Event): Promise<void> {
     event.preventDefault();
-    this.locallyValidated.set(false);
+    if (this.registrationForm().submitting()) {
+      return;
+    }
+    this.registeredEmail.set('');
     this.normalizeEmail();
 
-    await submit(this.registrationForm, async () => {
-      this.locallyValidated.set(true);
+    const successful = await submit(this.registrationForm, async () => {
+      try {
+        const response = await firstValueFrom(
+          this.authApi.register({ ...this.model() }).pipe(takeUntilDestroyed(this.destroyRef)),
+        );
+        this.registeredEmail.set(response.email);
+        return undefined;
+      } catch (error: unknown) {
+        const fieldErrors = this.getServerFieldErrors(error);
+        if (fieldErrors.length > 0) {
+          return fieldErrors;
+        }
+        return {
+          kind: 'request',
+          message:
+            error instanceof HttpErrorResponse && error.status === 0
+              ? 'The server could not be reached or the request timed out. Registration could not be confirmed.'
+              : 'Registration could not be confirmed. Please try again.',
+        };
+      }
+    });
+
+    if (successful) {
+      this.registrationForm().reset({ email: this.registeredEmail(), password: '' });
+    }
+  }
+
+  private getServerFieldErrors(error: unknown): ValidationError.WithFieldTree[] {
+    if (!(error instanceof HttpErrorResponse) || (error.status !== 400 && error.status !== 409)) {
+      return [];
+    }
+    const body: unknown = error.error;
+    if (typeof body !== 'object' || body === null || !('errors' in body)) {
+      return [];
+    }
+    const errors = body.errors;
+    if (typeof errors !== 'object' || errors === null) {
+      return [];
+    }
+    const fields = errors as Record<string, unknown>;
+    return (['email', 'password'] as const).flatMap((field) => {
+      const messages = fields[field];
+      if (!Array.isArray(messages) || !messages.every((message) => typeof message === 'string')) {
+        return [];
+      }
+      const message = messages.join(' ').trim();
+      return message
+        ? [
+            {
+              fieldTree: this.registrationForm[field],
+              kind: 'server',
+              message,
+            },
+          ]
+        : [];
     });
   }
 }
