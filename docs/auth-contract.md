@@ -7,7 +7,8 @@ This is the first full-stack TodoApp feature. It describes observable behavior; 
 - Backend registration, EF Core SQL Server persistence, the `InitialUsers` migration, password hashing, and unit/integration test code are implemented.
 - Angular has an English-language application shell and a lazy-loaded registration Signal Form at `/register`, with local validation and HTTP registration through `AuthApi`. It displays field errors for `400`/`409`, general request errors, and success after `201`; it clears the password and does not sign in.
 - Angular HTTP behavior is covered with a simulated HTTP backend. This does not prove a successful registration through a running frontend/API/SQL Server environment; verify that separately using [registration-local-setup.md](registration-local-setup.md).
-- Login, current-user lookup, logout, cookie sessions, CSRF protection, and their Angular UI remain planned requirements below.
+- Application login credential verification is implemented through `LoginHandler`, including shared input validation and dummy-hash verification for missing users. It returns identity data only and does not create a session.
+- The login HTTP endpoint, current-user lookup, logout, cookie sessions, CSRF protection, and their Angular UI remain planned requirements below.
 - Registration field errors use `ValidationProblem` with `errors.email` / `errors.password`; success returns only `id` and `email` and does not set an authentication cookie.
 - Test code and migration files do not prove that tests passed or that a particular database has the migration applied. Verify those separately when working on the feature.
 
@@ -17,6 +18,7 @@ This is the first full-stack TodoApp feature. It describes observable behavior; 
 - An email is required, trimmed for account lookup, and unique without regard to case. The database enforces uniqueness as well as application validation.
 - A password is required, must contain at least 15 and at most 256 Unicode code points, and cannot consist only of whitespace. Spaces and other character types are allowed; no mandatory character-class rules. The password is not trimmed or returned in an API response. Only a password hash is stored.
 - A registered user can sign in. An unknown email and an incorrect password produce the same public error.
+- Registration explicitly selects password-policy V1 (15–256 Unicode code points, not whitespace-only). Login input rules are derived from all supported creation revisions: lowest minimum, highest maximum, and whitespace-only rejection only if every supported revision rejects it. With V1 alone both scenarios currently use identical checks. Invalid input remains distinct from invalid credentials. See [password-policy-revisions.md](password-policy-revisions.md).
 - Signing in establishes a browser cookie session. The session survives page refresh, expires after eight hours, and can be ended through logout. Angular restores its user state by asking the API, not by trusting a locally stored flag.
 - A guest cannot access protected API resources. Angular route guards improve navigation, while the server makes the access decision.
 - Authentication cookies are not readable by JavaScript and are sent over HTTPS. Requests that change state use server-validated CSRF protection with Angular's client-side support.

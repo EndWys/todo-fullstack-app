@@ -1,4 +1,4 @@
-namespace TodoApp.Application.Features.Auth.Register;
+namespace TodoApp.Application.Features.Auth.Validation;
 
 public enum EmailValidationError
 {

@@ -1,5 +1,7 @@
 using TodoApp.Application.Features.Auth.Register;
 
+using TodoApp.Application.Features.Auth.Validation;
+
 namespace TodoApp.Api.Features.Auth.Register;
 
 public static class RegisterEndpoint
@@ -67,8 +69,8 @@ public static class RegisterEndpoint
     {
         PasswordValidationError.Required => "Password is required.",
         PasswordValidationError.OnlyWhitespace => "Password must not consist only of whitespace.",
-        PasswordValidationError.TooShort => "Password must contain at least 15 Unicode code points.",
-        PasswordValidationError.TooLong => "Password must contain no more than 256 Unicode code points.",
+        PasswordValidationError.TooShort => $"Password must contain at least {AuthPasswordPolicies.Registration.MinimumLength} Unicode code points.",
+        PasswordValidationError.TooLong => $"Password must contain no more than {AuthPasswordPolicies.Registration.MaximumLength} Unicode code points.",
         _ => "Password is invalid."
     };
 

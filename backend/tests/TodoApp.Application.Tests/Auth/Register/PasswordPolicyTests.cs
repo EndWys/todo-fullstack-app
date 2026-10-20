@@ -1,4 +1,4 @@
-using TodoApp.Application.Features.Auth.Register;
+using TodoApp.Application.Features.Auth.Validation;
 
 namespace TodoApp.Application.Tests.Auth.Register;
 
@@ -9,7 +9,7 @@ public sealed class PasswordPolicyTests
     [InlineData("")]
     public void ValidateReturnsRequiredForMissingPassword(string? password)
     {
-        Assert.Equal(PasswordValidationError.Required, PasswordPolicy.Validate(password));
+        Assert.Equal(PasswordValidationError.Required, PasswordPolicy.Validate(password, PasswordPolicyRevisions.V1));
     }
 
     [Theory]
@@ -17,7 +17,7 @@ public sealed class PasswordPolicyTests
     [InlineData("\t\r\n               ")]
     public void ValidateRejectsPasswordContainingOnlyWhitespace(string password)
     {
-        Assert.Equal(PasswordValidationError.OnlyWhitespace, PasswordPolicy.Validate(password));
+        Assert.Equal(PasswordValidationError.OnlyWhitespace, PasswordPolicy.Validate(password, PasswordPolicyRevisions.V1));
     }
 
     [Theory]
@@ -25,13 +25,13 @@ public sealed class PasswordPolicyTests
     [InlineData("12345678901234")]
     public void ValidateRejectsPasswordShorterThanMinimum(string password)
     {
-        Assert.Equal(PasswordValidationError.TooShort, PasswordPolicy.Validate(password));
+        Assert.Equal(PasswordValidationError.TooShort, PasswordPolicy.Validate(password, PasswordPolicyRevisions.V1));
     }
 
     [Fact]
     public void ValidateAcceptsPasswordAtMinimumLength()
     {
-        Assert.Null(PasswordPolicy.Validate("123456789012345"));
+        Assert.Null(PasswordPolicy.Validate("123456789012345", PasswordPolicyRevisions.V1));
     }
 
     [Fact]
@@ -39,13 +39,13 @@ public sealed class PasswordPolicyTests
     {
         string password = string.Concat(Enumerable.Repeat("😀", 15));
 
-        Assert.Null(PasswordPolicy.Validate(password));
+        Assert.Null(PasswordPolicy.Validate(password, PasswordPolicyRevisions.V1));
     }
 
     [Fact]
     public void ValidateAcceptsWhitespaceWhenPasswordAlsoContainsNonWhitespaceCharacters()
     {
-        Assert.Null(PasswordPolicy.Validate("long pass phrase"));
+        Assert.Null(PasswordPolicy.Validate("long pass phrase", PasswordPolicyRevisions.V1));
     }
 
     [Fact]
@@ -53,7 +53,7 @@ public sealed class PasswordPolicyTests
     {
         string password = new('a', 256);
 
-        Assert.Null(PasswordPolicy.Validate(password));
+        Assert.Null(PasswordPolicy.Validate(password, PasswordPolicyRevisions.V1));
     }
 
     [Fact]
@@ -61,6 +61,6 @@ public sealed class PasswordPolicyTests
     {
         string password = new('a', 257);
 
-        Assert.Equal(PasswordValidationError.TooLong, PasswordPolicy.Validate(password));
+        Assert.Equal(PasswordValidationError.TooLong, PasswordPolicy.Validate(password, PasswordPolicyRevisions.V1));
     }
 }

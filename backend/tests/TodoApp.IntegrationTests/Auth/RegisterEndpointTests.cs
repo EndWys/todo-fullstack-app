@@ -194,5 +194,7 @@ public sealed class RegisterEndpointTests
     private sealed class ThrowingPasswordHasher(Exception failure) : IPasswordHasher
     {
         public string HashPassword(string password) => throw failure;
+
+        public bool VerifyHashedPassword(string passwordHash, string providedPassword) => throw failure;
     }
 }

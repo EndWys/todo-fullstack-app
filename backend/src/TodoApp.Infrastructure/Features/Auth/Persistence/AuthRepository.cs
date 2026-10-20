@@ -16,6 +16,15 @@ public sealed class AuthRepository(AppDbContext dbContext) : IAuthRepository
         return dbContext.Users.AnyAsync(user => user.Email == email, cancellationToken);
     }
 
+    public Task<User?> GetByEmailAsync(Email email, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(email);
+
+        return dbContext.Users
+            .AsNoTracking()
+            .SingleOrDefaultAsync(user => user.Email == email, cancellationToken);
+    }
+
     public async Task AddAsync(User user, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(user);

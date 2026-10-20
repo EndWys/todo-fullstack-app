@@ -6,6 +6,9 @@ using TodoApp.Infrastructure.Features.Auth.Persistence;
 using TodoApp.Infrastructure.Features.Auth.Register;
 using TodoApp.Infrastructure.Persistence;
 
+using TodoApp.Application.Features.Auth.Login;
+using TodoApp.Infrastructure.Features.Auth.Security;
+
 namespace TodoApp.Api.Setup;
 
 public static class ServiceCollectionExtensions
@@ -22,7 +25,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAuthRepository, AuthRepository>();
         services.AddScoped<PasswordHasher<object>>();
         services.AddScoped<IPasswordHasher, AspNetPasswordHasher>();
+        services.AddSingleton<IDummyPasswordHash, DummyPasswordHash>();
         services.AddScoped<RegisterHandler>();
+        services.AddScoped<LoginHandler>();
 
         services.AddProblemDetails();
         services.AddOpenApi();

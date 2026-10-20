@@ -11,4 +11,13 @@ public class AspNetPasswordHasher(PasswordHasher<object> hasher) : IPasswordHash
     {
         return hasher.HashPassword(EmptyHasherContext, password);
     }
+
+    public bool VerifyHashedPassword(string passwordHash, string providedPassword)
+    {
+        PasswordVerificationResult result = hasher.VerifyHashedPassword(
+            EmptyHasherContext, passwordHash, providedPassword);
+
+        return result is PasswordVerificationResult.Success
+            or PasswordVerificationResult.SuccessRehashNeeded;
+    }
 }

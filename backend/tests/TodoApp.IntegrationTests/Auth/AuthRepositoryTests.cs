@@ -9,6 +9,56 @@ namespace TodoApp.IntegrationTests.Auth;
 public sealed class AuthRepositoryTests
 {
     [Fact]
+    public async Task GetByEmailAsync_WhenEmailDoesNotExist_ReturnsNull()
+    {
+        await using var dbContext = TestDatabase.CreateDbContext();
+        var repository = new AuthRepository(dbContext);
+        var email = Email.Create($"missing-{Guid.NewGuid():N}@example.com");
+
+        User? user = await repository.GetByEmailAsync(email, CancellationToken.None);
+
+        Assert.Null(user);
+    }
+
+    [Fact]
+    public async Task GetByEmailAsync_ReturnsPersistedUserWithoutTracking()
+    {
+        await using var dbContext = TestDatabase.CreateDbContext();
+        await using var transaction = await dbContext.Database.BeginTransactionAsync();
+        var repository = new AuthRepository(dbContext);
+        var email = Email.Create($"lookup-{Guid.NewGuid():N}@example.com");
+        var user = User.Create(email, "stored-test-hash");
+        await repository.AddAsync(user, CancellationToken.None);
+        dbContext.ChangeTracker.Clear();
+
+        User? found = await repository.GetByEmailAsync(email, CancellationToken.None);
+
+        Assert.NotNull(found);
+        Assert.Equal(user.UserId, found.UserId);
+        Assert.Equal(email, found.Email);
+        Assert.Equal("stored-test-hash", found.PasswordHash);
+        Assert.Empty(dbContext.ChangeTracker.Entries());
+    }
+
+    [Fact]
+    public async Task GetByEmailAsync_IgnoresEmailCase()
+    {
+        await using var dbContext = TestDatabase.CreateDbContext();
+        await using var transaction = await dbContext.Database.BeginTransactionAsync();
+        var repository = new AuthRepository(dbContext);
+        string suffix = Guid.NewGuid().ToString("N");
+        var user = User.Create(Email.Create($"MixedCase-{suffix}@Example.com"), "stored-test-hash");
+        await repository.AddAsync(user, CancellationToken.None);
+        dbContext.ChangeTracker.Clear();
+
+        User? found = await repository.GetByEmailAsync(
+            Email.Create($"mixedcase-{suffix}@example.com"), CancellationToken.None);
+
+        Assert.NotNull(found);
+        Assert.Equal(user.UserId, found.UserId);
+    }
+
+    [Fact]
     public async Task ExistsByEmailAsync_WhenEmailDoesNotExist_ReturnsFalse()
     {
         await using var dbContext = TestDatabase.CreateDbContext();

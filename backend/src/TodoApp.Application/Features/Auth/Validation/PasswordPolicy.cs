@@ -1,30 +1,28 @@
-﻿namespace TodoApp.Application.Features.Auth.Register;
+namespace TodoApp.Application.Features.Auth.Validation;
 
 public static class PasswordPolicy
 {
-    private const int MinimumLength = 15;
-    private const int MaximumLength = 256;
-
-    public static PasswordValidationError? Validate(string? password)
+    public static PasswordValidationError? Validate(string? password, PasswordRules rules)
     {
+        ArgumentNullException.ThrowIfNull(rules);
         if (string.IsNullOrEmpty(password))
         {
             return PasswordValidationError.Required;
         }
 
-        if (string.IsNullOrWhiteSpace(password))
+        if (rules.RejectOnlyWhitespace && string.IsNullOrWhiteSpace(password))
         {
             return PasswordValidationError.OnlyWhitespace;
         }
 
         int length = password.EnumerateRunes().Count();
 
-        if (length < MinimumLength)
+        if (length < rules.MinimumLength)
         {
             return PasswordValidationError.TooShort;
         }
 
-        if (length > MaximumLength)
+        if (length > rules.MaximumLength)
         {
             return PasswordValidationError.TooLong;
         }

@@ -2,6 +2,8 @@ using TodoApp.Application.Features.Auth.Abstractions;
 using TodoApp.Application.Features.Auth.Register;
 using TodoApp.Domain.Features.Auth;
 
+using TodoApp.Application.Features.Auth.Validation;
+
 namespace TodoApp.Application.Tests.Auth.Register;
 
 public sealed class RegisterHandlerTests
@@ -149,6 +151,9 @@ public sealed class RegisterHandlerTests
 
     private sealed class FakeAuthRepository : IAuthRepository
     {
+        public Task<User?> GetByEmailAsync(Email email, CancellationToken cancellationToken) =>
+            throw new NotSupportedException("Registration must not load a user.");
+
         public bool EmailExists { get; init; }
         public int ExistenceCheckCount { get; private set; }
         public User? AddedUser { get; private set; }
@@ -172,6 +177,9 @@ public sealed class RegisterHandlerTests
 
     private sealed class FakePasswordHasher(string passwordHash) : IPasswordHasher
     {
+        public bool VerifyHashedPassword(string passwordHash, string providedPassword) =>
+            throw new NotSupportedException("Registration must not verify a password.");
+
         public string? PasswordHashed { get; private set; }
 
         public string HashPassword(string password)
@@ -184,5 +192,7 @@ public sealed class RegisterHandlerTests
     private sealed class ThrowingPasswordHasher(Exception failure) : IPasswordHasher
     {
         public string HashPassword(string password) => throw failure;
+
+        public bool VerifyHashedPassword(string passwordHash, string providedPassword) => throw failure;
     }
 }
