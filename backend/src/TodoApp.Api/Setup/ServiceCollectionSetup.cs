@@ -11,7 +11,7 @@ using TodoApp.Infrastructure.Features.Auth.Security;
 
 namespace TodoApp.Api.Setup;
 
-public static class ServiceCollectionExtensions
+public static class ServiceCollectionSetup
 {
     public static IServiceCollection AddTodoAppServices(
         this IServiceCollection services,
@@ -29,6 +29,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<RegisterHandler>();
         services.AddScoped<LoginHandler>();
 
+        services.AddAppAuthentication();
         services.AddProblemDetails();
         services.AddOpenApi();
 

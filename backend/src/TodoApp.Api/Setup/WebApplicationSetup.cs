@@ -1,8 +1,9 @@
 using TodoApp.Api.Features.Auth.Register;
+using TodoApp.Api.Features.Auth.Login;
 
 namespace TodoApp.Api.Setup;
 
-public static class WebApplicationExtensions
+public static class WebApplicationSetup
 {
     public static WebApplication UseTodoAppPipeline(this WebApplication app)
     {
@@ -15,6 +16,8 @@ public static class WebApplicationExtensions
 
         app.UseExceptionHandler();
         app.UseHttpsRedirection();
+        app.UseAuthentication();
+        app.UseAuthorization();
 
         return app;
     }
@@ -22,6 +25,7 @@ public static class WebApplicationExtensions
     public static WebApplication MapTodoAppEndpoints(this WebApplication app)
     {
         RegisterEndpoint.Map(app);
+        LoginEndpoint.Map(app);
         return app;
     }
 }

@@ -1,4 +1,5 @@
 using TodoApp.Application.Features.Auth.Register;
+using TodoApp.Api.Features.Auth.Validation;
 
 using TodoApp.Application.Features.Auth.Validation;
 
@@ -18,7 +19,7 @@ public static class RegisterEndpoint
         RegisterHandler handler,
         CancellationToken cancellationToken)
     {
-        Dictionary<string, string[]> requiredErrors = GetRequiredFieldErrors(request);
+        Dictionary<string, string[]> requiredErrors = AuthInputErrors.RequiredFields(request?.Email, request?.Password);
         
         if (requiredErrors.Count > 0)
         {
@@ -36,56 +37,16 @@ public static class RegisterEndpoint
         }
         catch (InvalidPasswordException exception)
         {
-            return FieldError("password", GetPasswordErrorMessage(exception.Error));
+            return AuthInputErrors.Field("password",
+                AuthInputErrors.PasswordMessage(exception.Error, AuthPasswordPolicies.Registration));
         }
         catch (InvalidEmailException exception)
         {
-            return FieldError("email", GetEmailErrorMessage(exception.Error));
+            return AuthInputErrors.Field("email", AuthInputErrors.EmailMessage(exception.Error));
         }
         catch (EmailAlreadyRegisteredException)
         {
-            return FieldError("email", "Email is already registered.", StatusCodes.Status409Conflict);
+            return AuthInputErrors.Field("email", "Email is already registered.", StatusCodes.Status409Conflict);
         }
     }
-
-    private static Dictionary<string, string[]> GetRequiredFieldErrors(RegisterRequest? request)
-    {
-        var errors = new Dictionary<string, string[]>();
-
-        if (string.IsNullOrWhiteSpace(request?.Email))
-        {
-            errors["email"] = ["Email is required."];
-        }
-
-        if (string.IsNullOrEmpty(request?.Password))
-        {
-            errors["password"] = ["Password is required."];
-        }
-
-        return errors;
-    }
-
-    private static string GetPasswordErrorMessage(PasswordValidationError error) => error switch
-    {
-        PasswordValidationError.Required => "Password is required.",
-        PasswordValidationError.OnlyWhitespace => "Password must not consist only of whitespace.",
-        PasswordValidationError.TooShort => $"Password must contain at least {AuthPasswordPolicies.Registration.MinimumLength} Unicode code points.",
-        PasswordValidationError.TooLong => $"Password must contain no more than {AuthPasswordPolicies.Registration.MaximumLength} Unicode code points.",
-        _ => "Password is invalid."
-    };
-
-    private static string GetEmailErrorMessage(EmailValidationError error) => error switch
-    {
-        EmailValidationError.Required => "Email is required.",
-        EmailValidationError.InvalidFormat => "Email address has an invalid format.",
-        _ => "Email address is invalid."
-    };
-
-    private static IResult FieldError(
-        string field,
-        string message,
-        int statusCode = StatusCodes.Status400BadRequest) =>
-        Results.ValidationProblem(
-            new Dictionary<string, string[]> { [field] = [message] },
-            statusCode: statusCode);
 }
