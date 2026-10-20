@@ -1,5 +1,9 @@
 using TodoApp.Api.Features.Auth.Register;
 using TodoApp.Api.Features.Auth.Login;
+using TodoApp.Api.Features.Auth.Me;
+using TodoApp.Api.Features.Auth.Logout;
+using TodoApp.Api.Features.Auth.Csrf;
+using TodoApp.Api.Middleware;
 
 namespace TodoApp.Api.Setup;
 
@@ -10,14 +14,14 @@ public static class WebApplicationSetup
         if (app.Environment.IsDevelopment())
         {
             app.MapOpenApi();
-            app.UseSwaggerUI(options =>
-                options.SwaggerEndpoint("/openapi/v1.json", "TodoApp v1"));
+            app.UseSwaggerUI(SwaggerSetup.Configure);
         }
 
         app.UseExceptionHandler();
         app.UseHttpsRedirection();
         app.UseAuthentication();
         app.UseAuthorization();
+        app.UseMiddleware<CsrfProtectionMiddleware>();
 
         return app;
     }
@@ -26,6 +30,9 @@ public static class WebApplicationSetup
     {
         RegisterEndpoint.Map(app);
         LoginEndpoint.Map(app);
+        MeEndpoint.Map(app);
+        LogoutEndpoint.Map(app);
+        CsrfEndpoint.Map(app);
         return app;
     }
 }

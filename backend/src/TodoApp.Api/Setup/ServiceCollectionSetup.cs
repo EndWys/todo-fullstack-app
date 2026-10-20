@@ -30,6 +30,7 @@ public static class ServiceCollectionSetup
         services.AddScoped<LoginHandler>();
 
         services.AddAppAuthentication();
+        services.AddAppAntiforgery();
         services.AddProblemDetails();
         services.AddOpenApi();
 

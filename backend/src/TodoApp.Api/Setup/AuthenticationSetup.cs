@@ -14,7 +14,7 @@ public static class AuthenticationSetup
                 options.Cookie.Path = "/";
                 options.Cookie.HttpOnly = true;
                 options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-                // SameSite is defense in depth, not CSRF validation; antiforgery remains required.
+                // SameSite complements the server-validated antiforgery token on API mutations.
                 options.Cookie.SameSite = SameSiteMode.Lax;
                 options.ExpireTimeSpan = TimeSpan.FromHours(8);
                 options.SlidingExpiration = false;

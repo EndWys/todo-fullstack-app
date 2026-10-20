@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.Mvc.Testing.Handlers;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -29,10 +30,8 @@ internal sealed class TestApiFactory(Action<IServiceCollection>? configureTestSe
 
     public HttpClient CreateSafeClient()
     {
-        HttpClient client = CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost")
-        });
+        HttpClient client = CreateDefaultClient(new Uri("https://localhost"),
+            new CsrfTestHandler(cookieContainerHandlesCookies: true), new CookieContainerHandler());
 
         // Fail before the first request if the API was wired to any other database.
         using IServiceScope scope = Services.CreateScope();

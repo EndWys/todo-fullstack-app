@@ -34,6 +34,9 @@ describe('Register', () => {
       .querySelector('form')!
       .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     await Promise.resolve();
+    for (const bootstrap of http.match('/api/auth/csrf')) {
+      bootstrap.flush(null, { status: 204, statusText: 'No Content' });
+    }
     const requests = http.match('/api/auth/register');
     for (const request of requests) {
       request.flush(
@@ -126,6 +129,7 @@ describe('Register', () => {
     const input = await enterValue('password', password);
     element.querySelector('form')!.dispatchEvent(new Event('submit', { cancelable: true }));
     await Promise.resolve();
+    http.expectOne('/api/auth/csrf').flush(null, { status: 204, statusText: 'No Content' });
     const request = http.expectOne('/api/auth/register');
     expect(request.request.body.password).toBe(password);
     expect(input.value).toBe(password);
@@ -169,6 +173,7 @@ describe('Register', () => {
     await enterValue('password', 'correct horse battery');
     element.querySelector('form')!.dispatchEvent(new Event('submit', { cancelable: true }));
     await Promise.resolve();
+    http.expectOne('/api/auth/csrf').flush(null, { status: 204, statusText: 'No Content' });
     return http.expectOne('/api/auth/register');
   }
 
