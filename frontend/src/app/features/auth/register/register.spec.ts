@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Register } from './register';
+import { provideRouter } from '@angular/router';
 
 describe('Register', () => {
   let fixture: ComponentFixture<Register>;
@@ -11,7 +12,7 @@ describe('Register', () => {
   beforeEach(async () => {
     TestBed.configureTestingModule({
       imports: [Register],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
     });
     http = TestBed.inject(HttpTestingController);
     fixture = TestBed.createComponent(Register);
@@ -194,7 +195,7 @@ describe('Register', () => {
     await fixture.whenStable();
     expect(element.querySelector('button')?.disabled).toBe(false);
     expect(element.querySelector('[role="status"]')?.textContent).toContain(
-      'You are not signed in',
+      'Registration does not sign you in automatically',
     );
   });
 

@@ -3,8 +3,13 @@ import { Routes } from '@angular/router';
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'register',
+    redirectTo: 'login',
     pathMatch: 'full',
+  },
+  {
+    path: 'login',
+    title: 'Sign in — TodoApp',
+    loadComponent: () => import('./features/auth/login/login').then((module) => module.Login),
   },
   {
     path: 'register',

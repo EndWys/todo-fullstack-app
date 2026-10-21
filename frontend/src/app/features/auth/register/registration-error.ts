@@ -1,9 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { AuthFieldError, readAuthFieldErrors } from '../auth-field-errors';
 
-export interface RegistrationFieldError {
-  field: 'email' | 'password';
-  message: string;
-}
+export type RegistrationFieldError = AuthFieldError;
 
 export type RegistrationFailure =
   | { kind: 'validation'; errors: RegistrationFieldError[] }
@@ -21,26 +19,7 @@ export function parseRegistrationError(error: unknown): RegistrationFailure {
     return { kind: 'unexpected' };
   }
 
-  const body: unknown = error.error;
-  if (typeof body !== 'object' || body === null || !('errors' in body)) {
-    return { kind: 'unexpected' };
-  }
-  const errors = body.errors;
-  if (typeof errors !== 'object' || errors === null) {
-    return { kind: 'unexpected' };
-  }
-
-  const fields = errors as Record<string, unknown>;
-  const fieldErrors: RegistrationFieldError[] = (['email', 'password'] as const).flatMap(
-    (field) => {
-      const messages = fields[field];
-      if (!Array.isArray(messages) || !messages.every((message) => typeof message === 'string')) {
-        return [];
-      }
-      const message = messages.join(' ').trim();
-      return message ? [{ field, message }] : [];
-    },
-  );
+  const fieldErrors = readAuthFieldErrors(error.error);
 
   return fieldErrors.length > 0
     ? { kind: 'validation', errors: fieldErrors }

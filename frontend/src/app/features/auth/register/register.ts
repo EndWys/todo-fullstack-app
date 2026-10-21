@@ -10,13 +10,14 @@ import {
   ValidationError,
 } from '@angular/forms/signals';
 import { firstValueFrom } from 'rxjs';
+import { RouterLink } from '@angular/router';
 import { AuthApi } from '../auth-api';
 import { normalizeEmail } from '../email-normalization';
 import { validatePassword } from './register-validation';
 import { parseRegistrationError, RegistrationFailure } from './registration-error';
 
 @Component({
-  imports: [FormField],
+  imports: [FormField, RouterLink],
   selector: 'app-register',
   styleUrl: './register.scss',
   templateUrl: './register.html',

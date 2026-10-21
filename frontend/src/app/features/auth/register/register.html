@@ -77,7 +77,8 @@
 
     @if (registeredEmail()) {
       <p class="mt-3 mb-0" role="status">
-        Account created for {{ registeredEmail() }}. You are not signed in.
+        Account created for {{ registeredEmail() }}. Registration does not sign you in
+        automatically. <a routerLink="/login">Sign in</a>.
       </p>
     }
   </form>
