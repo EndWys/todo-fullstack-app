@@ -4,7 +4,7 @@
 
 Уточнение границ: **Tasks** и **Categories** — отдельные фичи. Ниже описано также их будущее взаимодействие; требования категорий и их интеграции не входят в готовность Tasks. Сначала Tasks работает без выбора, отображения и фильтрации категорий; эти возможности добавляются вместе с Categories.
 
-Реализованы Domain-сущность `TodoTask`, `TaskPriority`, нормализация/валидация и unit-тесты создания. В Application добавлены `CreateTaskCommand`/`CreateTaskHandler`, `GetTasksQuery`/`GetTasksHandler`, модели результатов, `ITaskRepository`, перевод ожидаемых ошибок фабрики и unit-тесты обработчиков. Реализация репозитория, API, DI wiring, EF mapping/миграции и UI задач пока отсутствуют. Категории, изменение состояния/редактирование остаются следующими срезами. Наличие unit-тестов не подтверждает сохранение в SQL Server или браузерный сценарий.
+Реализованы Domain-сущность `TodoTask`, `TaskPriority`, нормализация/валидация и unit-тесты создания. В Application добавлены `CreateTaskCommand`/`CreateTaskHandler`, `GetTasksQuery`/`GetTasksHandler`, модели результатов, `ITaskRepository`, перевод ожидаемых ошибок фабрики и unit-тесты обработчиков. В Infrastructure добавлены `TaskRepository`, `TodoTaskConfiguration`, `AppDbContext.Tasks`, подготовлена миграция `AddTodoTasks` и SQL-скрипт. Проверки модели/guards без БД проходят; SQL Server integration-тесты добавлены, но не запускались, миграция не применялась. Подробности — [tasks-persistence.md](tasks-persistence.md). API, DI wiring и UI задач пока отсутствуют. Категории, изменение состояния/редактирование остаются следующими срезами. Наличие unit-тестов не подтверждает сохранение в SQL Server или браузерный сценарий.
 
 ## 1. Цель и границы
 
