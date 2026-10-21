@@ -13,6 +13,7 @@ public sealed class LoginHandler(
     public async Task<LoginResult> Handle(LoginCommand command, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(command);
+        cancellationToken.ThrowIfCancellationRequested();
 
         if (PasswordPolicy.Validate(command.Password, AuthPasswordPolicies.Login) is { } error)
         {
