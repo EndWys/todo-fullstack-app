@@ -169,7 +169,8 @@ public sealed class CsrfEndpointTests
         var options = factory.Services.GetRequiredService<IOptionsMonitor<CookieAuthenticationOptions>>()
             .Get(CookieAuthenticationDefaults.AuthenticationScheme);
         var principal = new ClaimsPrincipal(new ClaimsIdentity(
-            [new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString())], "Cookies"));
+            [new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
+                new Claim(ClaimTypes.Email, "other@example.com")], "Cookies"));
         var properties = new AuthenticationProperties
         {
             IssuedUtc = factory.Clock.GetUtcNow(), ExpiresUtc = factory.Clock.GetUtcNow().AddHours(8)

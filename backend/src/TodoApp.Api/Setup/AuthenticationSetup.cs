@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
+using TodoApp.Api.Features.Auth.Identity;
 
 namespace TodoApp.Api.Setup;
 
@@ -18,6 +19,15 @@ public static class AuthenticationSetup
                 options.Cookie.SameSite = SameSiteMode.Lax;
                 options.ExpireTimeSpan = TimeSpan.FromHours(8);
                 options.SlidingExpiration = false;
+
+                // Signed tickets still require the expected identity fields. Reject incomplete
+                // identities before authorization/CSRF, without claiming to check account status in DB.
+                options.Events.OnValidatePrincipal = context =>
+                {
+                    if (!AuthIdentity.HasRequiredClaims(context.Principal))
+                        context.RejectPrincipal();
+                    return Task.CompletedTask;
+                };
 
                 // This host is an API: never turn authentication failures into HTML redirects.
                 options.Events.OnRedirectToLogin = context =>

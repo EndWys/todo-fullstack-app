@@ -1,8 +1,8 @@
 # Tasks: HTTP-контракт создания и списка
 
-**Статус:** контракт первого среза принят владельцем. Tasks endpoints и HTTP DTO пока не реализованы. Этот документ не подтверждает выполнение HTTP-сценария или применение миграции к БД. Бизнес-правила находятся в [tasks-contract.md](tasks-contract.md), cookie/CSRF — в [auth-contract.md](auth-contract.md).
+**Статус:** контракт первого среза принят владельцем; Tasks endpoints, DI и HTTP DTO реализованы и проверены HTTP-тестами. Angular UI задач пока отсутствует, браузерный сценарий не проверялся. Бизнес-правила находятся в [tasks-contract.md](tasks-contract.md), cookie/CSRF — в [auth-contract.md](auth-contract.md).
 
-Текущая реализация: Domain и Application создания/получения страницы добавлены вместе с unit-тестами. Application использует `ITaskRepository` и `TimeProvider`, возвращает типизированные результаты и ошибки полей без HTTP-статусов. EF-реализация `TaskRepository` и mapping добавлены, миграция подготовлена, но не применена; SQL-проверки ожидают отдельного обновления тестовой схемы. Регистрация Tasks в DI и отображение результатов в HTTP DTO ещё впереди. Подробнее — [tasks-persistence.md](tasks-persistence.md). Эти изменения не подтверждают реальное выполнение данного HTTP-контракта.
+Текущая реализация: Domain/Application/Infrastructure соединены через DI с `POST /api/tasks` и `GET /api/tasks`. Application использует `ITaskRepository` и `TimeProvider`, возвращает типизированные результаты и ошибки полей без HTTP-статусов. 2026-10-21 миграция применена к локальным TodoAppDev/TodoAppTest. Помимо 14 repository SQL-кейсов добавлены 91 HTTP-кейс с подменой репозитория, проверка DI lifetime и 3 HTTP → SQL Server сценария: сохранение, изоляция пользователей, пагинация. Подробнее — [tasks-persistence.md](tasks-persistence.md).
 
 ## 1. Границы первого среза
 
@@ -49,7 +49,7 @@ X-XSRF-TOKEN: <request token>
 
 Нормализация и допустимость Unicode/управляющих символов соответствуют существующему Domain-контракту. Клиентская валидация не заменяет серверную.
 
-Тело — JSON object. Неизвестные поля отклоняются с `400`, в том числе попытки передать `id`, `taskId`, `userId`, `ownerId`, `isCompleted`, `createdAt`, `completedAt`, `categoryId`. Это локальное правило нового Tasks request DTO, не изменение поведения существующего Auth API. Строгая проверка полей помогает обнаружить ошибки клиента; изоляция данных обеспечивается серверным выбором владельца независимо от неё.
+Тело — JSON object. Имена полей точно camelCase; повторяющиеся JSON properties отклоняются, а не выбираются по принципу last wins. Неизвестные поля отклоняются с `400`, в том числе попытки передать `id`, `taskId`, `userId`, `ownerId`, `isCompleted`, `createdAt`, `completedAt`, `categoryId`. Это локальное правило нового Tasks request DTO/reader, не изменение поведения существующего Auth API. Строгая проверка полей помогает обнаружить ошибки клиента; изоляция данных обеспечивается серверным выбором владельца независимо от неё.
 
 После успешного сохранения в БД — `201 Created`:
 
@@ -149,3 +149,11 @@ GET /api/tasks?page=1&pageSize=20
 - `GetTasksResponse`: items, totalCount, page, pageSize.
 
 Это transport DTO слоя Api, не Domain entities и не Application commands/results. Общий generic envelope, API-versioning и дополнительные пакеты для двух endpoint сейчас не вводятся. Правила этого документа относятся к согласованному Tasks API; глобальная переработка Auth не входит в срез.
+
+## 7. Детали HTTP-границы и проверки
+
+- POST читает тело через `CreateTaskRequestReader` с локальными System.Text.Json options. OpenAPI request body описан отдельным operation transformer: `Accepts` не используется, поскольку routing-time `415` обходил reader и возвращал пустое тело. Некорректные JSON-типы/Unicode и пустое тело возвращают безопасный `400`, неподдерживаемый media type — `415 ProblemDetails`.
+- GET использует `[AsParameters] GetTasksRequest` с nullable string-полями. Reader явно проверяет повторения и формат Int32; Application проверяет диапазон и разрешённые размеры. Это сохраняет field ProblemDetails вместо раннего пустого `400` от встроенного int binding. OpenAPI показывает оба query-параметра с описанием числовых правил.
+- Cookie validation отклоняет ticket без непустого Guid/Email до authorization и CSRF. Это проверка структуры подписанной identity, не проверка существования аккаунта в БД.
+- `TasksNoStoreMiddleware` добавляет `no-store` через `OnStarting`, в том числе для `401`, CSRF `400` и технических `500`.
+- HTTP-тесты запускают настоящий ASP.NET Core pipeline. Только `TaskPersistenceEndpointTests` и существующие repository-тесты используют SQL Server; остальные Tasks HTTP/DI проверки обходятся без БД. Полный backend-прогон и ограничения описаны в [tasks-persistence.md](tasks-persistence.md).
