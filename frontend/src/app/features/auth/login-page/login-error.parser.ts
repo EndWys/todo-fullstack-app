@@ -4,21 +4,48 @@ import { parseAuthFieldErrors } from '../auth-field-errors.parser';
 import type { LoginFailure } from './login.models';
 
 export function parseLoginError(requestError: unknown): LoginFailure {
-  if (!(requestError instanceof HttpErrorResponse)) return { kind: 'unexpected' };
-  if (requestError.status === AUTH_TRANSPORT_ERROR_STATUS) return { kind: 'network' };
-  if (requestError.status === HttpStatusCode.Unauthorized) return { kind: 'credentials' };
-  if (requestError.status !== HttpStatusCode.BadRequest) return { kind: 'unexpected' };
+  if (!(requestError instanceof HttpErrorResponse)) {
+    return { kind: 'unexpected' };
+  }
+
+  if (requestError.status === AUTH_TRANSPORT_ERROR_STATUS) {
+    return { kind: 'network' };
+  }
+
+  if (requestError.status === HttpStatusCode.Unauthorized) {
+    return { kind: 'credentials' };
+  }
+
+  if (requestError.status !== HttpStatusCode.BadRequest) {
+    return { kind: 'unexpected' };
+  }
+
   const responseBody: unknown = requestError.error;
-  if (
-    typeof responseBody === 'object' &&
-    responseBody !== null &&
-    'code' in responseBody &&
-    responseBody.code === 'csrf_validation_failed'
-  ) {
+  if (isCsrfFailure(responseBody)) {
     return { kind: 'csrf' };
   }
   const fieldErrors = parseAuthFieldErrors(responseBody);
-  return fieldErrors.length ? { kind: 'validation', errors: fieldErrors } : { kind: 'unexpected' };
+  if (fieldErrors.length > 0) {
+    return { kind: 'validation', errors: fieldErrors };
+  }
+
+  return { kind: 'unexpected' };
+}
+
+function isCsrfFailure(responseBody: unknown): boolean {
+  if (responseBody === null) {
+    return false;
+  }
+
+  if (typeof responseBody !== 'object') {
+    return false;
+  }
+
+  if (!('code' in responseBody)) {
+    return false;
+  }
+
+  return responseBody.code === 'csrf_validation_failed';
 }
 
 export function getLoginFailureMessage(

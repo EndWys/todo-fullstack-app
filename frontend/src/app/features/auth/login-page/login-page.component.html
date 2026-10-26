@@ -1,6 +1,10 @@
 <section aria-labelledby="login-title">
   <h1 #pageHeadingElement id="login-title" class="h2 mb-3" tabindex="-1">
-    {{ authenticatedUser() ? 'Your account' : 'Sign in' }}
+    @if (authenticatedUser()) {
+      Your account
+    } @else {
+      Sign in
+    }
   </h1>
 
   @if (hasSessionEnded && !authenticatedUser()) {
@@ -36,7 +40,11 @@
         [disabled]="isAuthOperationInProgress()"
         (click)="signOut()"
       >
-        {{ isAuthOperationInProgress() ? 'Signing out…' : 'Sign out' }}
+        @if (isAuthOperationInProgress()) {
+          Signing out…
+        } @else {
+          Sign out
+        }
       </button>
     } @else {
       <p id="login-note" class="text-body-secondary">
@@ -67,7 +75,7 @@
               (blur)="normalizeLoginEmail()"
               [class.is-invalid]="shouldShowEmailErrors()"
               [attr.aria-invalid]="shouldShowEmailErrors()"
-              [attr.aria-describedby]="shouldShowEmailErrors() ? 'login-email-errors' : null"
+              [attr.aria-describedby]="getFieldDescriptionId('email')"
             />
             @if (shouldShowEmailErrors()) {
               <div id="login-email-errors" class="invalid-feedback" aria-live="polite">
@@ -91,7 +99,7 @@
               [formField]="loginForm.password"
               [class.is-invalid]="shouldShowPasswordErrors()"
               [attr.aria-invalid]="shouldShowPasswordErrors()"
-              [attr.aria-describedby]="shouldShowPasswordErrors() ? 'login-password-errors' : null"
+              [attr.aria-describedby]="getFieldDescriptionId('password')"
             />
             @if (shouldShowPasswordErrors()) {
               <div id="login-password-errors" class="invalid-feedback" aria-live="polite">
@@ -110,7 +118,11 @@
           class="btn btn-primary"
           [disabled]="loginForm().submitting() || isAuthOperationInProgress()"
         >
-          {{ loginForm().submitting() ? 'Signing in…' : 'Sign in' }}
+          @if (loginForm().submitting()) {
+            Signing in…
+          } @else {
+            Sign in
+          }
         </button>
         @for (loginRequestError of loginForm().errors(); track loginRequestError.kind) {
           <p class="mt-3 mb-0 text-danger" role="alert">{{ loginRequestError.message }}</p>

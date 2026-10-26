@@ -1,16 +1,16 @@
 export interface RegisterRequest {
-  email: string;
-  password: string;
+  readonly email: string;
+  readonly password: string;
 }
 
 export interface RegisterResponse {
-  id: string;
-  email: string;
+  readonly id: string;
+  readonly email: string;
 }
 
 export interface LoginRequest {
-  email: string;
-  password: string;
+  readonly email: string;
+  readonly password: string;
 }
 
 export interface AuthUser {
@@ -23,6 +23,6 @@ export type AuthSessionState =
   | { readonly status: 'authenticated'; readonly user: AuthUser };
 
 export interface AuthFieldError {
-  field: 'email' | 'password';
-  message: string;
+  readonly field: 'email' | 'password';
+  readonly message: string;
 }

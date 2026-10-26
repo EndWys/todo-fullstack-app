@@ -4,8 +4,8 @@ import {
 } from './registration-password.constants';
 
 export interface RegistrationPasswordValidationError {
-  kind: 'whitespace' | 'tooShort' | 'tooLong';
-  message: string;
+  readonly kind: 'whitespace' | 'tooShort' | 'tooLong';
+  readonly message: string;
 }
 
 // Required-field validation is applied separately by the form schema.
@@ -21,12 +21,14 @@ export function validateRegistrationPassword(
   }
 
   const passwordCodePointCount = [...password].length;
+
   if (passwordCodePointCount < REGISTRATION_PASSWORD_MIN_CODE_POINTS) {
     return {
       kind: 'tooShort',
       message: `Use at least ${REGISTRATION_PASSWORD_MIN_CODE_POINTS} characters.`,
     };
   }
+
   if (passwordCodePointCount > REGISTRATION_PASSWORD_MAX_CODE_POINTS) {
     return {
       kind: 'tooLong',

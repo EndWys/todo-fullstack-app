@@ -4,9 +4,13 @@
   [textContent]="taskSummary().title"
 ></h2>
 <div class="d-flex flex-wrap gap-2 mb-2">
-  <span class="badge text-bg-light border">{{
-    taskSummary().isCompleted ? 'Completed' : 'Active'
-  }}</span>
+  <span class="badge text-bg-light border">
+    @if (taskSummary().isCompleted) {
+      Completed
+    } @else {
+      Active
+    }
+  </span>
   <span class="badge text-bg-light border">Priority: {{ priorityDisplayLabel() }}</span>
 </div>
 <p class="small text-body-secondary mb-0">

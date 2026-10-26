@@ -1,7 +1,7 @@
-import { HttpClient, HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpResponse, HttpStatusCode } from '@angular/common/http';
 import { inject, Service } from '@angular/core';
-import { catchError, map, of, switchMap, throwError } from 'rxjs';
-import { LoginRequest, RegisterRequest, RegisterResponse } from './auth.models';
+import { catchError, map, Observable, of, switchMap, throwError } from 'rxjs';
+import type { AuthUser, LoginRequest, RegisterRequest, RegisterResponse } from './auth.models';
 import { parseAuthUserResponse } from './auth-user.parser';
 import { CsrfTokenService } from '../../core/security/csrf-token.service';
 import { AUTH_REQUEST_TIMEOUT_MS } from './auth-http.constants';
@@ -21,18 +21,7 @@ export class AuthApiService {
           timeout: AUTH_REQUEST_TIMEOUT_MS,
         }),
       ),
-      map((registrationResponse) => {
-        const registrationResponseBody = registrationResponse.body;
-        if (
-          registrationResponse.status !== HttpStatusCode.Created ||
-          !registrationResponseBody ||
-          typeof registrationResponseBody.id !== 'string' ||
-          typeof registrationResponseBody.email !== 'string'
-        ) {
-          throw new Error('Unexpected registration response.');
-        }
-        return registrationResponseBody;
-      }),
+      map(readRegistrationResponse),
     );
   }
 
@@ -44,10 +33,7 @@ export class AuthApiService {
           timeout: AUTH_REQUEST_TIMEOUT_MS,
         }),
       ),
-      map((loginResponse) => {
-        if (loginResponse.status !== HttpStatusCode.Ok) throw new Error('Unexpected login status.');
-        return parseAuthUserResponse(loginResponse.body);
-      }),
+      map(readLoginResponse),
     );
   }
 
@@ -59,18 +45,9 @@ export class AuthApiService {
         cache: 'no-store',
       })
       .pipe(
-        map((sessionResponse) => {
-          if (sessionResponse.status !== HttpStatusCode.Ok)
-            throw new Error('Unexpected session status.');
-          return parseAuthUserResponse(sessionResponse.body);
-        }),
+        map(readSessionResponse),
         // Only an actual /me 401 confirms a guest. A network/500 error leaves session state unknown.
-        catchError((requestError: unknown) =>
-          requestError instanceof HttpErrorResponse &&
-          requestError.status === HttpStatusCode.Unauthorized
-            ? of(null)
-            : throwError(() => requestError),
-        ),
+        catchError(handleSessionReadError),
       );
   }
 
@@ -82,10 +59,61 @@ export class AuthApiService {
           timeout: AUTH_REQUEST_TIMEOUT_MS,
         }),
       ),
-      map((logoutResponse) => {
-        if (logoutResponse.status !== HttpStatusCode.NoContent)
-          throw new Error('Unexpected logout status.');
-      }),
+      map(ensureLogoutSucceeded),
     );
+  }
+}
+
+function readRegistrationResponse(response: HttpResponse<RegisterResponse>): RegisterResponse {
+  const responseBody = response.body;
+
+  if (response.status !== HttpStatusCode.Created) {
+    throw new Error('Unexpected registration response.');
+  }
+
+  if (!responseBody) {
+    throw new Error('Unexpected registration response.');
+  }
+
+  if (typeof responseBody.id !== 'string') {
+    throw new Error('Unexpected registration response.');
+  }
+
+  if (typeof responseBody.email !== 'string') {
+    throw new Error('Unexpected registration response.');
+  }
+
+  return responseBody;
+}
+
+function readLoginResponse(response: HttpResponse<unknown>): AuthUser {
+  if (response.status !== HttpStatusCode.Ok) {
+    throw new Error('Unexpected login status.');
+  }
+
+  return parseAuthUserResponse(response.body);
+}
+
+function readSessionResponse(response: HttpResponse<unknown>): AuthUser {
+  if (response.status !== HttpStatusCode.Ok) {
+    throw new Error('Unexpected session status.');
+  }
+
+  return parseAuthUserResponse(response.body);
+}
+
+function handleSessionReadError(requestError: unknown): Observable<null> {
+  if (requestError instanceof HttpErrorResponse) {
+    if (requestError.status === HttpStatusCode.Unauthorized) {
+      return of(null);
+    }
+  }
+
+  return throwError(() => requestError);
+}
+
+function ensureLogoutSucceeded(response: HttpResponse<void>): void {
+  if (response.status !== HttpStatusCode.NoContent) {
+    throw new Error('Unexpected logout status.');
   }
 }

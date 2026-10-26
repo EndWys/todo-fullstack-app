@@ -26,7 +26,7 @@
           (blur)="normalizeRegistrationEmail()"
           [class.is-invalid]="shouldShowEmailErrors()"
           [attr.aria-invalid]="shouldShowEmailErrors()"
-          [attr.aria-describedby]="shouldShowEmailErrors() ? 'email-errors' : null"
+          [attr.aria-describedby]="getEmailDescriptionId()"
         />
 
         @if (shouldShowEmailErrors()) {
@@ -51,9 +51,7 @@
           [formField]="registrationForm.password"
           [class.is-invalid]="shouldShowPasswordErrors()"
           [attr.aria-invalid]="shouldShowPasswordErrors()"
-          [attr.aria-describedby]="
-            shouldShowPasswordErrors() ? 'password-help password-errors' : 'password-help'
-          "
+          [attr.aria-describedby]="getPasswordDescriptionIds()"
         />
         <div id="password-help" class="form-text">
           Use {{ registrationPasswordMinCodePoints }}–{{
@@ -77,7 +75,11 @@
     </fieldset>
 
     <button type="submit" class="btn btn-primary" [disabled]="registrationForm().submitting()">
-      {{ registrationForm().submitting() ? 'Creating account…' : 'Create account' }}
+      @if (registrationForm().submitting()) {
+        Creating account…
+      } @else {
+        Create account
+      }
     </button>
 
     @for (

@@ -34,12 +34,12 @@ export class TaskListPageComponent {
     this.taskListDataService.reloadTaskList();
   }
 
-  private focusPageHeading(): void {
-    this.pageHeadingElement()?.nativeElement.focus();
-  }
-
   protected refreshTaskListAfterCreation(): void {
     this.taskListDataService.refreshAfterTaskCreation();
     this.focusPageHeading();
+  }
+
+  private focusPageHeading(): void {
+    this.pageHeadingElement()?.nativeElement.focus();
   }
 }

@@ -14,7 +14,11 @@
         aria-controls="tasks-results"
         (click)="reloadTaskList()"
       >
-        {{ currentTaskListLoadState.status === 'error' ? 'Try again' : 'Refresh tasks' }}
+        @if (currentTaskListLoadState.status === 'error') {
+          Try again
+        } @else {
+          Refresh tasks
+        }
       </button>
     </div>
     <app-task-create-form

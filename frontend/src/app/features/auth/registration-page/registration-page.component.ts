@@ -29,6 +29,8 @@ import type { RegistrationFailure } from './registration.models';
 export class RegistrationPageComponent {
   private readonly authApiService = inject(AuthApiService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly registeredEmailSignal = signal('');
+
   protected readonly registrationPasswordMinCodePoints = REGISTRATION_PASSWORD_MIN_CODE_POINTS;
   protected readonly registrationPasswordMaxCodePoints = REGISTRATION_PASSWORD_MAX_CODE_POINTS;
   protected readonly registrationFormModel = signal({
@@ -36,7 +38,6 @@ export class RegistrationPageComponent {
     password: '',
   });
 
-  private readonly registeredEmailSignal = signal('');
   protected readonly registeredEmail = this.registeredEmailSignal.asReadonly();
   protected readonly passwordCodePointCount = computed(
     () => [...this.registrationFormModel().password].length,
@@ -78,30 +79,55 @@ export class RegistrationPageComponent {
     }));
   }
 
+  protected getEmailDescriptionId(): string | null {
+    if (this.shouldShowEmailErrors()) {
+      return 'email-errors';
+    }
+
+    return null;
+  }
+
+  protected getPasswordDescriptionIds(): string {
+    if (this.shouldShowPasswordErrors()) {
+      return 'password-help password-errors';
+    }
+
+    return 'password-help';
+  }
+
   protected async submitRegistration(submitEvent: Event): Promise<void> {
     submitEvent.preventDefault();
+
     if (this.registrationForm().submitting()) {
       return;
     }
+
     this.clearRegistrationSuccess();
     this.normalizeRegistrationEmail();
 
-    const isRegistrationSuccessful = await submit(this.registrationForm, async () => {
-      try {
-        const registrationResponse = await firstValueFrom(
-          this.authApiService
-            .registerUser({ ...this.registrationFormModel() })
-            .pipe(takeUntilDestroyed(this.destroyRef)),
-        );
-        this.registeredEmailSignal.set(registrationResponse.email);
-        return undefined;
-      } catch (registrationError: unknown) {
-        return this.mapRegistrationFailureToFormErrors(parseRegistrationError(registrationError));
-      }
-    });
+    const isRegistrationSuccessful = await submit(this.registrationForm, async () =>
+      this.executeRegistration(),
+    );
 
     if (isRegistrationSuccessful) {
       this.registrationForm().reset({ email: this.registeredEmail(), password: '' });
+    }
+  }
+
+  private async executeRegistration(): Promise<
+    ValidationError.WithOptionalFieldTree[] | undefined
+  > {
+    try {
+      const registrationResponse = await firstValueFrom(
+        this.authApiService
+          .registerUser({ ...this.registrationFormModel() })
+          .pipe(takeUntilDestroyed(this.destroyRef)),
+      );
+
+      this.registeredEmailSignal.set(registrationResponse.email);
+      return undefined;
+    } catch (registrationError: unknown) {
+      return this.mapRegistrationFailureToFormErrors(parseRegistrationError(registrationError));
     }
   }
 
@@ -115,14 +141,22 @@ export class RegistrationPageComponent {
         message,
       }));
     }
+
     return [
       {
         kind: 'request',
-        message:
-          registrationFailure.kind === 'network'
-            ? 'The server could not be reached or the request timed out. Registration could not be confirmed.'
-            : 'Registration could not be confirmed. Please try again.',
+        message: getRegistrationFailureMessage(registrationFailure),
       },
     ];
   }
+}
+
+function getRegistrationFailureMessage(
+  registrationFailure: Exclude<RegistrationFailure, { kind: 'validation' }>,
+): string {
+  if (registrationFailure.kind === 'network') {
+    return 'The server could not be reached or the request timed out. Registration could not be confirmed.';
+  }
+
+  return 'Registration could not be confirmed. Please try again.';
 }

@@ -7,9 +7,11 @@ export function parseRegistrationError(requestError: unknown): RegistrationFailu
   if (!(requestError instanceof HttpErrorResponse)) {
     return { kind: 'unexpected' };
   }
+
   if (requestError.status === AUTH_TRANSPORT_ERROR_STATUS) {
     return { kind: 'network' };
   }
+
   if (
     requestError.status !== HttpStatusCode.BadRequest &&
     requestError.status !== HttpStatusCode.Conflict
@@ -19,7 +21,9 @@ export function parseRegistrationError(requestError: unknown): RegistrationFailu
 
   const fieldErrors = parseAuthFieldErrors(requestError.error);
 
-  return fieldErrors.length > 0
-    ? { kind: 'validation', errors: fieldErrors }
-    : { kind: 'unexpected' };
+  if (fieldErrors.length > 0) {
+    return { kind: 'validation', errors: fieldErrors };
+  }
+
+  return { kind: 'unexpected' };
 }
