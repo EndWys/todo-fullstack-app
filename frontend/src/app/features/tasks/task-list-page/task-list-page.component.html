@@ -1,0 +1,57 @@
+<section aria-labelledby="tasks-title">
+  <h1 #pageHeadingElement id="tasks-title" class="h2 mb-3" tabindex="-1">My tasks</h1>
+  @if (authenticatedUser(); as currentAuthenticatedUser) {
+    @let currentTaskListLoadState = taskListLoadState();
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+      <p class="mb-0">
+        Signed in as {{ currentAuthenticatedUser.email }}.
+        <a routerLink="/login">Manage your account</a>
+      </p>
+      <button
+        type="button"
+        class="btn btn-outline-primary"
+        [disabled]="currentTaskListLoadState.status === 'loading'"
+        aria-controls="tasks-results"
+        (click)="reloadTaskList()"
+      >
+        {{ currentTaskListLoadState.status === 'error' ? 'Try again' : 'Refresh tasks' }}
+      </button>
+    </div>
+    <div id="tasks-results" [attr.aria-busy]="currentTaskListLoadState.status === 'loading'">
+      @switch (currentTaskListLoadState.status) {
+        @case ('loading') {
+          <p role="status">Loading your tasks…</p>
+        }
+        @case ('error') {
+          <p class="alert alert-danger" role="alert">
+            Tasks could not be loaded. Please try again.
+          </p>
+        }
+        @case ('ready') {
+          @let pageData = currentTaskListLoadState.pageData;
+          @let visibleTaskCount = pageData.tasks.length;
+          <p role="status">Showing {{ visibleTaskCount }} of {{ pageData.totalCount }} tasks.</p>
+          @if (visibleTaskCount === 0) {
+            <p>No tasks to display.</p>
+          } @else {
+            <ul class="list-group" aria-label="Tasks">
+              @for (taskSummary of pageData.tasks; track taskSummary.id) {
+                <li class="list-group-item p-3">
+                  <app-task-list-item [taskSummary]="taskSummary" />
+                </li>
+              }
+            </ul>
+          }
+          @if (pageData.totalCount > pageData.pageSize) {
+            <p class="mt-3 text-body-secondary">
+              Only the first page (up to {{ pageData.pageSize }} tasks) is shown. Page navigation
+              will be added next.
+            </p>
+          }
+        }
+      }
+    </div>
+  } @else {
+    <p role="status">Your session is no longer confirmed. Please sign in again.</p>
+  }
+</section>

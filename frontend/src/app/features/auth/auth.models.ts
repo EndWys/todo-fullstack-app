@@ -1,0 +1,28 @@
+export interface RegisterRequest {
+  email: string;
+  password: string;
+}
+
+export interface RegisterResponse {
+  id: string;
+  email: string;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface AuthUser {
+  readonly id: string;
+  readonly email: string;
+}
+
+export type AuthSessionState =
+  | { readonly status: 'unknown' | 'loading' | 'anonymous' | 'error' }
+  | { readonly status: 'authenticated'; readonly user: AuthUser };
+
+export interface AuthFieldError {
+  field: 'email' | 'password';
+  message: string;
+}

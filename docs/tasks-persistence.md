@@ -2,7 +2,7 @@
 
 ## Статус и границы
 
-Реализованы `Infrastructure/Features/Tasks/Persistence/TaskRepository.cs`, `TodoTaskConfiguration.cs` и `AppDbContext.Tasks`. Подготовлены `20261021153632_AddTodoTasks` и [SQL-скрипт](../backend/src/TodoApp.Infrastructure/Persistence/Migrations/Scripts/AddTodoTasks.sql). После явного разрешения владельца 2026-10-21 миграция применена к локальным TodoAppDev и TodoAppTest; SQL Server integration-тесты прошли. Следующим шагом добавлены Tasks API/DI и HTTP-тесты; UI пока отсутствует. Новых изменений схемы для HTTP-шага не потребовалось.
+Реализованы `Infrastructure/Features/Tasks/Persistence/TaskRepository.cs`, `TodoTaskConfiguration.cs` и `AppDbContext.Tasks`. Подготовлены `20261021153632_AddTodoTasks` и [SQL-скрипт](../backend/src/TodoApp.Infrastructure/Persistence/Migrations/Scripts/AddTodoTasks.sql). После явного разрешения владельца 2026-10-21 миграция применена к локальным TodoAppDev и TodoAppTest; SQL Server integration-тесты прошли. Следующими шагами добавлены Tasks API/DI, HTTP-тесты и Angular-чтение первой страницы; UI создания ещё отсутствует. Новых изменений схемы для HTTP/frontend-шагов не потребовалось.
 
 Это продолжение [принятого HTTP-контракта](tasks-http-contract.md), не доказательство готовности полного full-stack среза.
 
