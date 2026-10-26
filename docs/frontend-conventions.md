@@ -21,6 +21,14 @@ Explicit role suffixes and a separate `testing/` directory are project conventio
 - Avoid vague names such as `data`, `item`, or `helper` when their meaning is unclear without extra context. Prefer names such as `taskSummary`, `taskListLoadState`, and `taskListDataService`.
 - Method and function names describe actions: `reloadTaskList()`, `parseTaskListResponse()`.
 
+## Readable control flow
+
+- Keep methods and framework callbacks focused. Extract meaningful steps into named functions or private methods when this makes the calling code easier to understand; use focused module functions for dependency-free transformations.
+- Use sequential guards and meaningful predicates for complex conditions. Keep simple boolean expressions where they are easy to read.
+- Avoid deeply nested callbacks and nested ternary expressions. Prefer `if`/`switch` for multi-branch decisions; use simple ternaries sparingly.
+- Separate logical blocks, groups of fields, and methods with blank lines.
+- Do not extract functions that merely wrap an obvious operation without improving clarity.
+
 ## 3. Responsibility boundaries
 
 - Pages coordinate presentation, user actions, navigation, and focus. Execute HTTP requests outside components.
@@ -43,6 +51,14 @@ Explicit role suffixes and a separate `testing/` directory are project conventio
 - Keep shared feature constants in a purpose-specific file. Keep single-file implementation details local.
 - Name values that express a rule, limit, or non-obvious meaning. Do not turn every literal into a constant.
 - Equal numbers do not necessarily represent the same setting. Share values by meaning, not merely by equality.
+
+### Explicit types for constrained values
+
+- Explicitly type constants and configuration fields that must conform to an existing domain or API type.
+- Use the existing type as the single source of allowed values; do not duplicate its union of literals.
+- Prefer type annotations when consumers only need the declared contract. Use `satisfies` when preserving narrower inferred types serves a concrete purpose.
+- Do not use type assertions (`as SomeType`) to bypass compatibility checks.
+- Mark arrays and object properties readonly when consumers should not modify them.
 
 ## 6. Tests
 

@@ -1,6 +1,6 @@
 # Tasks: HTTP-контракт создания и списка
 
-**Статус:** контракт первого среза принят владельцем; Tasks endpoints, DI и HTTP DTO реализованы и проверены HTTP-тестами. Angular имеет защищённый `/tasks`, чтение первой страницы через GET и обработку `401`; форма/POST и управление пагинацией ещё впереди. Браузерный сценарий не проверялся. Бизнес-правила находятся в [tasks-contract.md](tasks-contract.md), cookie/CSRF — в [auth-contract.md](auth-contract.md), текущий frontend-шаг — в [tasks-frontend.md](tasks-frontend.md).
+**Статус:** контракт первого среза принят владельцем; Tasks endpoints, DI и HTTP DTO реализованы и проверены HTTP-тестами. Angular имеет защищённый `/tasks`, чтение первой страницы через GET и обработку `401`; creation form/POST are implemented; pagination controls remain pending. Браузерный сценарий не проверялся. Бизнес-правила находятся в [tasks-contract.md](tasks-contract.md), cookie/CSRF — в [auth-contract.md](auth-contract.md), текущий frontend-шаг — в [tasks-frontend.md](tasks-frontend.md).
 
 Текущая реализация: Domain/Application/Infrastructure соединены через DI с `POST /api/tasks` и `GET /api/tasks`. Application использует `ITaskRepository` и `TimeProvider`, возвращает типизированные результаты и ошибки полей без HTTP-статусов. 2026-10-21 миграция применена к локальным TodoAppDev/TodoAppTest. Помимо 14 repository SQL-кейсов добавлены 91 HTTP-кейс с подменой репозитория, проверка DI lifetime и 3 HTTP → SQL Server сценария: сохранение, изоляция пользователей, пагинация. Подробнее — [tasks-persistence.md](tasks-persistence.md).
 

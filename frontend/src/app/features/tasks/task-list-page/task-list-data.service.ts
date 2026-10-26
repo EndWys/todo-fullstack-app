@@ -1,5 +1,5 @@
 import { httpResource, HttpResourceRequest, HttpStatusCode } from '@angular/common/http';
-import { computed, inject, Service } from '@angular/core';
+import { computed, inject, Service, signal } from '@angular/core';
 import { AuthSessionService } from '../../auth/auth-session.service';
 import { parseTaskListResponse } from './task-list-response.parser';
 import { TaskListLoadState } from '../task-list.models';
@@ -18,8 +18,9 @@ const INITIAL_TASK_LIST_REQUEST: HttpResourceRequest = {
 @Service({ autoProvided: false })
 export class TaskListDataService {
   private readonly authSession = inject(AuthSessionService);
+  private readonly taskListRequest = signal(INITIAL_TASK_LIST_REQUEST);
   private readonly taskListResource = httpResource(
-    () => (this.authSession.authenticatedUser() ? INITIAL_TASK_LIST_REQUEST : undefined),
+    () => (this.authSession.authenticatedUser() ? this.taskListRequest() : undefined),
     {
       parse: (responseBody: unknown) => {
         const parsedPageData = parseTaskListResponse(responseBody);
@@ -49,5 +50,15 @@ export class TaskListDataService {
   reloadTaskList(): void {
     if (this.authSession.authenticatedUser() && !this.taskListResource.isLoading())
       this.taskListResource.reload();
+  }
+
+  refreshAfterTaskCreation(): void {
+    // A new request reference invalidates even an in-flight pre-mutation read.
+    // Do not add a client-only revision as an unsupported HTTP query parameter.
+    if (!this.authSession.authenticatedUser()) {
+      return;
+    }
+
+    this.taskListRequest.set({ ...INITIAL_TASK_LIST_REQUEST });
   }
 }

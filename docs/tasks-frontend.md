@@ -1,8 +1,8 @@
 # Angular Tasks: маршрут, доступ и список
 
-## Статус 2026-10-22
+## Status 2026-10-26
 
-Реализованы lazy `/tasks`, навигация, guard, обработка `401` и чтение первой страницы через GET `/api/tasks?page=1&pageSize=20`. Список использует отдельный TaskListItemComponent для каждой записи. Есть loading/empty/error, явные refresh/retry и фактические items/totalCount. Формы создания, mutations, поиска, категорий и управления пагинацией в UI пока нет. Backend-контракт не менялся. Следующий шаг — форма создания.
+The lazy `/tasks` page includes navigation, access guard, session-expiry handling, first-page GET, and a separate item component. Creation is now implemented with a Signal Form, shared CSRF bootstrap, validated POST, field/unconfirmed errors, and post-success list refresh. Loading/empty/error and explicit refresh/retry remain. Pagination controls, editing, search, and categories are not implemented. See [creation flow and verification](task-creation-frontend.md). The backend contract is unchanged; the full first slice still needs pagination UI and manual live acceptance.
 
 ## Разделение ответственности
 
@@ -97,7 +97,7 @@ npm test -- --watch=false
 7. На Tasks нажать Refresh tasks: один новый GET. При недоступном API появляется безопасная ошибка; после восстановления Try again перечитывает список без повтора mutations.
 8. Для проверки текущего `401` удалить только свою development auth-cookie в DevTools и нажать Refresh tasks: ожидаются очистка списка и переход на Login. Не публиковать cookie/HAR.
 
-Для непустого списка пока нужны заранее созданные собственные задачи, например через существующий POST в development Swagger. UI создания ещё не реализован. Обычный DevTools fetch не проходит через Angular interceptor и не проверяет его работу.
+Tasks can now be created through the form on `/tasks`; Swagger remains an alternative API check. A plain DevTools fetch does not pass through Angular's interceptor and does not verify its behavior. See [manual creation acceptance](task-creation-frontend.md#verification-and-manual-acceptance).
 
 ## Этап структуры: выполнено и дальнейшие шаги
 

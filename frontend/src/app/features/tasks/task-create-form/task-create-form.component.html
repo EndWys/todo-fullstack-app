@@ -1,0 +1,107 @@
+<section aria-labelledby="task-create-title" class="border rounded p-3 mb-4">
+  <h2 id="task-create-title" class="h4">Create a task</h2>
+  <form
+    novalidate
+    (submit)="submitTaskCreation($event)"
+    (input)="clearCreationSuccess()"
+    [attr.aria-busy]="taskCreationForm().submitting()"
+  >
+    <fieldset class="border-0 p-0 m-0" [disabled]="taskCreationForm().submitting()">
+      <legend class="visually-hidden">New task details</legend>
+      <div class="mb-3">
+        <label for="task-title" class="form-label">Title</label>
+        <input
+          #titleInputElement
+          id="task-title"
+          type="text"
+          class="form-control"
+          [formField]="taskCreationForm.title"
+          [class.is-invalid]="shouldShowFieldErrors('title')"
+          [attr.aria-invalid]="shouldShowFieldErrors('title')"
+          [attr.aria-describedby]="getFieldDescriptionIds('title')"
+        />
+        <div id="task-title-help" class="form-text">
+          Required, one line, up to {{ titleMaxCodePoints }} characters after trimming.
+        </div>
+        @if (shouldShowFieldErrors('title')) {
+          <div id="task-title-errors" class="invalid-feedback" aria-live="polite">
+            @for (fieldError of taskCreationForm.title().errors(); track $index) {
+              <p class="mb-0">{{ fieldError.message }}</p>
+            }
+          </div>
+        }
+      </div>
+      <div class="mb-3">
+        <label for="task-description" class="form-label">Description (optional)</label>
+        <textarea
+          #descriptionInputElement
+          id="task-description"
+          class="form-control"
+          rows="3"
+          [formField]="taskCreationForm.description"
+          [class.is-invalid]="shouldShowFieldErrors('description')"
+          [attr.aria-invalid]="shouldShowFieldErrors('description')"
+          [attr.aria-describedby]="getFieldDescriptionIds('description')"
+        ></textarea>
+        <div id="task-description-help" class="form-text">
+          Up to {{ descriptionMaxCodePoints }} characters after trimming. Line breaks are allowed.
+        </div>
+        @if (shouldShowFieldErrors('description')) {
+          <div id="task-description-errors" class="invalid-feedback" aria-live="polite">
+            @for (fieldError of taskCreationForm.description().errors(); track $index) {
+              <p class="mb-0">{{ fieldError.message }}</p>
+            }
+          </div>
+        }
+      </div>
+      <div class="mb-3">
+        <label for="task-priority" class="form-label">Priority</label>
+        <select
+          #priorityInputElement
+          id="task-priority"
+          class="form-select"
+          [formField]="taskCreationForm.priority"
+          [class.is-invalid]="shouldShowFieldErrors('priority')"
+          [attr.aria-invalid]="shouldShowFieldErrors('priority')"
+          [attr.aria-describedby]="getFieldDescriptionIds('priority')"
+        >
+          @for (priorityOption of priorityOptions; track priorityOption.value) {
+            <option [value]="priorityOption.value">{{ priorityOption.label }}</option>
+          }
+        </select>
+        @if (shouldShowFieldErrors('priority')) {
+          <div id="task-priority-errors" class="invalid-feedback" aria-live="polite">
+            @for (fieldError of taskCreationForm.priority().errors(); track $index) {
+              <p class="mb-0">{{ fieldError.message }}</p>
+            }
+          </div>
+        }
+      </div>
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary" [disabled]="taskCreationForm().submitting()">
+          @if (taskCreationForm().submitting()) {
+            Creating task…
+          } @else {
+            Create task
+          }
+        </button>
+        <button type="button" class="btn btn-outline-secondary" (click)="resetCreationForm()">
+          Clear form
+        </button>
+      </div>
+    </fieldset>
+    <div #creationFeedbackElement tabindex="-1">
+      @for (requestError of taskCreationForm().errors(); track $index) {
+        <p class="mt-3 text-danger" role="alert">{{ requestError.message }}</p>
+      }
+      @if (hasUnconfirmedCreation()) {
+        <button type="button" class="btn btn-outline-primary" (click)="refreshTaskList()">
+          Refresh list before retrying
+        </button>
+      }
+    </div>
+    @if (successMessage()) {
+      <p class="mt-3 mb-0" role="status">{{ successMessage() }}</p>
+    }
+  </form>
+</section>

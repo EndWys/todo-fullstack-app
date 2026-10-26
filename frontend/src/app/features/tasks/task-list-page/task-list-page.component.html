@@ -17,6 +17,10 @@
         {{ currentTaskListLoadState.status === 'error' ? 'Try again' : 'Refresh tasks' }}
       </button>
     </div>
+    <app-task-create-form
+      (taskCreated)="refreshTaskListAfterCreation()"
+      (taskListRefreshRequested)="refreshTaskListAfterCreation()"
+    />
     <div id="tasks-results" [attr.aria-busy]="currentTaskListLoadState.status === 'loading'">
       @switch (currentTaskListLoadState.status) {
         @case ('loading') {

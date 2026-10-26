@@ -3,9 +3,10 @@ import { RouterLink } from '@angular/router';
 import { AuthSessionService } from '../../auth/auth-session.service';
 import { TaskListItemComponent } from '../task-list-item/task-list-item.component';
 import { TaskListDataService } from './task-list-data.service';
+import { TaskCreateFormComponent } from '../task-create-form/task-create-form.component';
 
 @Component({
-  imports: [RouterLink, TaskListItemComponent],
+  imports: [RouterLink, TaskListItemComponent, TaskCreateFormComponent],
   providers: [TaskListDataService],
   selector: 'app-task-list-page',
   styles: `
@@ -35,5 +36,10 @@ export class TaskListPageComponent {
 
   private focusPageHeading(): void {
     this.pageHeadingElement()?.nativeElement.focus();
+  }
+
+  protected refreshTaskListAfterCreation(): void {
+    this.taskListDataService.refreshAfterTaskCreation();
+    this.focusPageHeading();
   }
 }

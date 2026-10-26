@@ -3,16 +3,18 @@ import { inject, Service } from '@angular/core';
 import { catchError, map, of, switchMap, throwError } from 'rxjs';
 import { LoginRequest, RegisterRequest, RegisterResponse } from './auth.models';
 import { parseAuthUserResponse } from './auth-user.parser';
+import { CsrfTokenService } from '../../core/security/csrf-token.service';
 import { AUTH_REQUEST_TIMEOUT_MS } from './auth-http.constants';
 
 @Service()
 export class AuthApiService {
   private readonly httpClient = inject(HttpClient);
+  private readonly csrfTokenService = inject(CsrfTokenService);
 
   registerUser(registrationRequest: RegisterRequest) {
     // Refresh before each mutation: antiforgery tokens are tied to the current identity.
     // Starting the POST afterwards lets Angular's XSRF interceptor read the new cookie.
-    return this.prepareCsrfToken().pipe(
+    return this.csrfTokenService.prepareCsrfToken().pipe(
       switchMap(() =>
         this.httpClient.post<RegisterResponse>('/api/auth/register', registrationRequest, {
           observe: 'response',
@@ -35,7 +37,7 @@ export class AuthApiService {
   }
 
   loginUser(loginRequest: LoginRequest) {
-    return this.prepareCsrfToken().pipe(
+    return this.csrfTokenService.prepareCsrfToken().pipe(
       switchMap(() =>
         this.httpClient.post<unknown>('/api/auth/login', loginRequest, {
           observe: 'response',
@@ -73,7 +75,7 @@ export class AuthApiService {
   }
 
   logoutUser() {
-    return this.prepareCsrfToken().pipe(
+    return this.csrfTokenService.prepareCsrfToken().pipe(
       switchMap(() =>
         this.httpClient.post<void>('/api/auth/logout', null, {
           observe: 'response',
@@ -85,20 +87,5 @@ export class AuthApiService {
           throw new Error('Unexpected logout status.');
       }),
     );
-  }
-
-  private prepareCsrfToken() {
-    return this.httpClient
-      .get<void>('/api/auth/csrf', {
-        observe: 'response',
-        timeout: AUTH_REQUEST_TIMEOUT_MS,
-        cache: 'no-store',
-      })
-      .pipe(
-        map((csrfResponse) => {
-          if (csrfResponse.status !== HttpStatusCode.NoContent)
-            throw new Error('Unexpected CSRF bootstrap status.');
-        }),
-      );
   }
 }

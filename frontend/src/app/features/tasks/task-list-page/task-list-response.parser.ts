@@ -1,10 +1,8 @@
-import { TaskListPageData, TaskSummary } from '../task-list.models';
+import { parseTaskSummary } from '../task-summary.parser';
+import { TaskListPageData } from '../task-list.models';
 import { FIRST_TASK_PAGE, SUPPORTED_TASK_PAGE_SIZES } from '../task-list-pagination.constants';
 
 const MAX_INT32 = 2_147_483_647;
-const EMPTY_TASK_ID = '00000000-0000-0000-0000-000000000000';
-const TASK_ID_PATTERN = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
-const UTC_TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|\+00:00)$/;
 
 export function parseTaskListResponse(responseBody: unknown): TaskListPageData {
   if (
@@ -33,33 +31,6 @@ export function parseTaskListResponse(responseBody: unknown): TaskListPageData {
   };
 }
 
-function parseTaskSummary(taskResponse: unknown): TaskSummary {
-  if (
-    !isJsonObject(taskResponse) ||
-    typeof taskResponse['id'] !== 'string' ||
-    !TASK_ID_PATTERN.test(taskResponse['id']) ||
-    taskResponse['id'] === EMPTY_TASK_ID ||
-    typeof taskResponse['title'] !== 'string' ||
-    (taskResponse['priority'] !== 'low' &&
-      taskResponse['priority'] !== 'normal' &&
-      taskResponse['priority'] !== 'high') ||
-    typeof taskResponse['isCompleted'] !== 'boolean' ||
-    !isUtcTimestampString(taskResponse['createdAt']) ||
-    (taskResponse['completedAt'] !== null && !isUtcTimestampString(taskResponse['completedAt'])) ||
-    taskResponse['isCompleted'] !== (taskResponse['completedAt'] !== null)
-  )
-    throw new Error('Unexpected task response.');
-
-  return {
-    id: taskResponse['id'],
-    title: taskResponse['title'],
-    priority: taskResponse['priority'],
-    isCompleted: taskResponse['isCompleted'],
-    createdAt: taskResponse['createdAt'],
-    completedAt: taskResponse['completedAt'],
-  };
-}
-
 function isJsonObject(candidateValue: unknown): candidateValue is Record<string, unknown> {
   return (
     typeof candidateValue === 'object' && candidateValue !== null && !Array.isArray(candidateValue)
@@ -79,12 +50,4 @@ function isSupportedPageSize(
   candidateValue: unknown,
 ): candidateValue is (typeof SUPPORTED_TASK_PAGE_SIZES)[number] {
   return SUPPORTED_TASK_PAGE_SIZES.some((pageSize) => candidateValue === pageSize);
-}
-
-function isUtcTimestampString(candidateValue: unknown): candidateValue is string {
-  return (
-    typeof candidateValue === 'string' &&
-    UTC_TIMESTAMP_PATTERN.test(candidateValue) &&
-    Number.isFinite(Date.parse(candidateValue))
-  );
 }
