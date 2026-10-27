@@ -11,7 +11,7 @@ using TodoApp.Domain.Features.Auth;
 namespace TodoApp.IntegrationTests.Auth;
 
 // Shared HTTP/cookie test host. No SQL Server connections are made by this fixture.
-internal sealed class LoginApiFactory : WebApplicationFactory<Program>
+internal sealed class LoginApiFactory(Action<IServiceCollection>? configureTestServices = null) : WebApplicationFactory<Program>
 {
     public const string Password = " correct horse battery staple ";
     public FakeRepository Repository { get; } = new();
@@ -28,6 +28,7 @@ internal sealed class LoginApiFactory : WebApplicationFactory<Program>
             services.AddSingleton<IAuthRepository>(Repository);
             services.PostConfigure<CookieAuthenticationOptions>(CookieAuthenticationDefaults.AuthenticationScheme,
                 options => options.TimeProvider = Clock);
+            configureTestServices?.Invoke(services);
         });
     }
 

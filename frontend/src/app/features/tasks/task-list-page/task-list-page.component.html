@@ -1,0 +1,84 @@
+<section aria-labelledby="tasks-title">
+  <h1 #pageHeadingElement id="tasks-title" class="h2 mb-3" tabindex="-1">My tasks</h1>
+  @if (authenticatedUser(); as currentAuthenticatedUser) {
+    @let currentTaskListLoadState = taskListLoadState();
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+      <p class="mb-0">
+        Signed in as {{ currentAuthenticatedUser.email }}.
+        <a routerLink="/login">Manage your account</a>
+      </p>
+      <button
+        type="button"
+        class="btn btn-outline-primary"
+        [disabled]="
+          currentTaskListLoadState.status === 'loading' || paginationState().status === 'invalid'
+        "
+        aria-controls="tasks-results"
+        (click)="reloadTaskList()"
+      >
+        @if (currentTaskListLoadState.status === 'error') {
+          Try again
+        } @else {
+          Refresh tasks
+        }
+      </button>
+    </div>
+    <app-task-create-form
+      (taskCreated)="refreshTaskListAfterCreation()"
+      (taskListRefreshRequested)="refreshCurrentTaskPage()"
+    />
+    @if (navigationError(); as message) {
+      <p class="alert alert-danger" role="alert">{{ message }}</p>
+    }
+    @if (paginationState(); as currentPaginationState) {
+      @if (currentPaginationState.status === 'invalid') {
+        <div class="alert alert-danger" role="alert">
+          <p>{{ currentPaginationState.message }}</p>
+          <button type="button" class="btn btn-outline-primary" (click)="resetTaskPagination()">
+            Reset pagination
+          </button>
+        </div>
+      }
+    }
+    <div id="tasks-results" [attr.aria-busy]="currentTaskListLoadState.status === 'loading'">
+      @switch (currentTaskListLoadState.status) {
+        @case ('loading') {
+          <p role="status">Loading your tasks…</p>
+        }
+        @case ('error') {
+          <p class="alert alert-danger" role="alert">
+            Tasks could not be loaded. Please try again.
+          </p>
+        }
+        @case ('ready') {
+          @let pageData = currentTaskListLoadState.pageData;
+          @let visibleTaskCount = pageData.tasks.length;
+          <p role="status">Showing {{ visibleTaskCount }} of {{ pageData.totalCount }} tasks.</p>
+          @if (visibleTaskCount === 0) {
+            @if (pageData.totalCount === 0 && pageData.page === firstTaskPage) {
+              <p>No tasks to display.</p>
+            } @else {
+              <p>No tasks on this page. Use the page controls to return to an available page.</p>
+            }
+          } @else {
+            <ul class="list-group" aria-label="Tasks">
+              @for (taskSummary of pageData.tasks; track taskSummary.id) {
+                <li class="list-group-item p-3">
+                  <app-task-list-item [taskSummary]="taskSummary" />
+                </li>
+              }
+            </ul>
+          }
+          <app-task-list-pagination
+            [pagination]="pageData"
+            [totalCount]="pageData.totalCount"
+            (pageRequested)="changeTaskPage($event)"
+            (pageSizeRequested)="changeTaskPageSize($event)"
+          />
+        }
+      }
+    </div>
+  } @else {
+    <p role="status">Your session is no longer confirmed. Please sign in again.</p>
+  }
+</section>

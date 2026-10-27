@@ -1,0 +1,134 @@
+<section aria-labelledby="login-title">
+  <h1 #pageHeadingElement id="login-title" class="h2 mb-3" tabindex="-1">
+    @if (authenticatedUser()) {
+      Your account
+    } @else {
+      Sign in
+    }
+  </h1>
+
+  @if (hasSessionEnded && !authenticatedUser()) {
+    <p role="status">Your session is no longer available. Please sign in again.</p>
+  }
+
+  @if (sessionState().status === 'loading') {
+    <p role="status">Checking your session…</p>
+  } @else {
+    @if (sessionState().status === 'error') {
+      <div class="alert alert-warning" role="alert">
+        <p>
+          Your session could not be confirmed. Check it before repeating a sign-in or sign-out
+          request.
+        </p>
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          [disabled]="isAuthOperationInProgress()"
+          (click)="checkCurrentSession()"
+        >
+          Check session
+        </button>
+      </div>
+    }
+
+    @if (authenticatedUser(); as authenticatedUser) {
+      <p role="status">You are signed in as {{ authenticatedUser.email }}.</p>
+      <p><a routerLink="/tasks">Open my tasks</a></p>
+      <button
+        type="button"
+        class="btn btn-outline-primary"
+        [disabled]="isAuthOperationInProgress()"
+        (click)="signOut()"
+      >
+        @if (isAuthOperationInProgress()) {
+          Signing out…
+        } @else {
+          Sign out
+        }
+      </button>
+    } @else {
+      <p id="login-note" class="text-body-secondary">
+        Use your existing TodoApp account. Your password is sent unchanged.
+      </p>
+      <form
+        novalidate
+        aria-describedby="login-note"
+        [attr.aria-busy]="loginForm().submitting()"
+        (submit)="submitLogin($event)"
+      >
+        <fieldset
+          class="border-0 p-0 m-0"
+          [disabled]="loginForm().submitting() || isAuthOperationInProgress()"
+        >
+          <legend class="visually-hidden">Sign-in details</legend>
+          <div class="mb-3">
+            <label for="login-email" class="form-label">Email</label>
+            <input
+              #emailInputElement
+              id="login-email"
+              type="email"
+              autocomplete="username"
+              autocapitalize="none"
+              spellcheck="false"
+              class="form-control"
+              [formField]="loginForm.email"
+              (blur)="normalizeLoginEmail()"
+              [class.is-invalid]="shouldShowEmailErrors()"
+              [attr.aria-invalid]="shouldShowEmailErrors()"
+              [attr.aria-describedby]="getFieldDescriptionId('email')"
+            />
+            @if (shouldShowEmailErrors()) {
+              <div id="login-email-errors" class="invalid-feedback" aria-live="polite">
+                @for (
+                  emailValidationError of loginForm.email().errors();
+                  track emailValidationError.kind
+                ) {
+                  <p class="mb-0">{{ emailValidationError.message }}</p>
+                }
+              </div>
+            }
+          </div>
+          <div class="mb-4">
+            <label for="login-password" class="form-label">Password</label>
+            <input
+              #passwordInputElement
+              id="login-password"
+              type="password"
+              autocomplete="current-password"
+              class="form-control"
+              [formField]="loginForm.password"
+              [class.is-invalid]="shouldShowPasswordErrors()"
+              [attr.aria-invalid]="shouldShowPasswordErrors()"
+              [attr.aria-describedby]="getFieldDescriptionId('password')"
+            />
+            @if (shouldShowPasswordErrors()) {
+              <div id="login-password-errors" class="invalid-feedback" aria-live="polite">
+                @for (
+                  passwordValidationError of loginForm.password().errors();
+                  track passwordValidationError.kind
+                ) {
+                  <p class="mb-0">{{ passwordValidationError.message }}</p>
+                }
+              </div>
+            }
+          </div>
+        </fieldset>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="loginForm().submitting() || isAuthOperationInProgress()"
+        >
+          @if (loginForm().submitting()) {
+            Signing in…
+          } @else {
+            Sign in
+          }
+        </button>
+        @for (loginRequestError of loginForm().errors(); track loginRequestError.kind) {
+          <p class="mt-3 mb-0 text-danger" role="alert">{{ loginRequestError.message }}</p>
+        }
+      </form>
+      <p class="mt-4">No account yet? <a routerLink="/register">Create an account</a>.</p>
+    }
+  }
+</section>

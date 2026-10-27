@@ -2,6 +2,24 @@
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.2.1.
 
+## Editor and linting
+
+Use Angular Language Service for template completion and type information, ESLint for
+TypeScript and template diagnostics, and Prettier for formatting with `.prettierrc`.
+Pretty TypeScript Errors and Error Lens improve how existing diagnostics are displayed.
+VS Code's built-in JavaScript/TypeScript inlay hints can show inferred types and parameter names.
+
+The local VS Code settings support opening either the repository root or `frontend/`.
+They enable formatting and ESLint fixes on explicit saves for TypeScript and HTML,
+and formatting on save for SCSS. Select **Use Workspace Version** if VS Code asks
+which TypeScript version to use. The `.vscode/` folders are ignored by Git, so these
+editor preferences stay local; ESLint and Prettier configuration is kept in the project.
+
+From `frontend/`, run `npm run lint` to check TypeScript and Angular templates without
+changing files. Template accessibility rules are included, but do not replace browser
+accessibility testing. The setup follows the
+[Angular ESLint configuration guide](https://github.com/angular-eslint/angular-eslint/blob/main/docs/CONFIGURING_ESLINT.md).
+
 ## Development server
 
 To start a local development server, run:

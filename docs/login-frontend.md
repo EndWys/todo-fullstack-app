@@ -2,38 +2,38 @@
 
 ## Разделение ответственности
 
-- `frontend/src/app/features/auth/login/login.ts` — Signal Form, нормализация email, обработка submit и привязка ошибок к полям, фокус после результата. Компонент создан через `ng generate component features/auth/login --skip-tests`.
-- `login.html` / `login.scss` — labels, password-manager hints, состояние ожидания, errors, account view и кнопка выхода. Используются Bootstrap и нативная семантика form/fieldset/button.
-- `login/login-error.ts` — чистый разбор HTTP-ошибок и безопасные сообщения; `401` всегда показывает `Invalid email or password.`, raw details технических сбоев не выводятся.
-- `auth-field-errors.ts` — общий парсер `errors.email` / `errors.password` для Register и Login, без зависимости одного сценария от другого.
-- `auth-api.ts` — HTTP: регистрация, login, `/me`, logout; подготовка CSRF перед POST и проверка ожидаемых статусов. Автоматических повторов нет.
-- `auth.model.ts` — отдельный LoginRequest и readonly AuthUser, без domain entities, passwords в response или token-полей.
-- `auth-user.ts` — runtime-проверка public identity response и копирование только `id`/`email`.
-- `auth-session.ts` — singleton на `@Service`, созданный CLI `ng generate service features/auth/auth-session --skip-tests`. Хранит подтверждённую identity в signals, управляет restore/login/logout и неопределёнными результатами.
-- `app.ts` — запускает restore при создании корневого компонента. `app.html` даёт ссылки Sign in/Account и Register; `app.routes.ts` lazy-loads `/login` и `/register`, `/` ведёт на `/login`.
+- `frontend/src/app/features/auth/login-page/login-page.component.ts` — Signal Form, нормализация email, обработка submit и привязка ошибок к полям, фокус после результата. Компонент создан через `ng generate component features/auth/login --skip-tests`.
+- `login-page.component.html` / `login-page.component.scss` — labels, password-manager hints, состояние ожидания, errors, account view и кнопка выхода. Используются Bootstrap и нативная семантика form/fieldset/button.
+- `login-page/login-error.parser.ts` — чистый разбор HTTP-ошибок и безопасные сообщения; `401` всегда показывает `Invalid email or password.`, raw details технических сбоев не выводятся.
+- `auth-field-errors.parser.ts` — общий парсер `errors.email` / `errors.password` для Register и Login, без зависимости одного сценария от другого.
+- `auth-api.service.ts` — HTTP: регистрация, login, `/me`, logout; подготовка CSRF перед POST и проверка ожидаемых статусов. Автоматических повторов нет.
+- `auth.models.ts` — отдельный LoginRequest и readonly AuthUser, без domain entities, passwords в response или token-полей.
+- `auth-user.parser.ts` — runtime-проверка public identity response и копирование только `id`/`email`.
+- `auth-session.service.ts` — singleton на `@Service`, созданный CLI `ng generate service features/auth/auth-session --skip-tests`. Хранит подтверждённую identity в signals, управляет restore/login/logout и неопределёнными результатами.
+- `app.ts` — запускает restore при создании корневого компонента. `app.html` даёт ссылки Sign in/Account, Register и My tasks при подтверждённой identity; `app.routes.ts` lazy-loads `/login`, `/register` и защищённый `/tasks`. `/` ведёт на `/tasks`, guard перенаправляет гостя на `/login`.
 - Register получил ссылку Sign in после успеха. Успех регистрации говорит, что она **не выполняет автоматический вход**, не утверждая, что браузер обязательно не имеет более ранней сессии.
 
 ## Форма и signals
 
-`model = signal({email: '', password: ''})` содержит текущие поля только в памяти. `form(model, schema)` строит дерево полей и их состояние: errors, touched, submitting. `[formField]` связывает input с моделью; `computed` определяет, когда показывать ошибку.
+`loginFormModel = signal({email: '', password: ''})` содержит текущие поля только в памяти. `form(loginFormModel, schema)` строит дерево полей и их состояние: errors, touched, submitting. `[formField]` связывает input с моделью; `computed` определяет, когда показывать ошибку.
 
 Email нормализуется через существующий `normalizeEmail`: Unicode White_Space по краям удаляется без изменения регистра. Пароль не обрезается и не нормализуется. `autocomplete="username"` и `autocomplete="current-password"` помогают password manager.
 
 `submit(form, async callback)` проверяет схему и отмечает поля. Callback отправки выполняется только при валидной форме. Во время запроса кнопка и fieldset недоступны; повторный submit также проверяется в обработчике. При server-side field error ошибка привязывается к соответствующему field tree. Фокус переводится после render на ошибочное поле, а после успеха — на заголовок account view. Пароль очищается после подтверждённого успеха, включая восстановление успешного входа через `/me` после потери ответа.
 
-Пока страницы задач нет, успешный вход показывает account view на том же `/login`: email и Sign out. Это не защищённая страница задач и не новый бизнес-модуль.
+Успешный вход показывает account view на том же `/login`: email, ссылку Open my tasks и Sign out. Автоматического перехода после входа нет. `/tasks` защищён guard-ом и показывает первую страницу списка; форма создания ещё не подключена. Подробнее — [tasks-frontend.md](tasks-frontend.md).
 
 ## Запросы входа
 
 ```text
-Login.onSubmit
-  → AuthSession.login
-    → AuthApi.login
+LoginPageComponent.submitLogin
+  → AuthSessionService.loginUser
+    → AuthApiService.loginUser
       → GET /api/auth/csrf: 204 + CSRF cookies
       → Angular XSRF interceptor читает __Host-TodoApp.Xsrf
       → POST /api/auth/login + X-XSRF-TOKEN + cookies
       ← 200 {id,email} + Set-Cookie authentication ticket
-    → state = authenticated
+    → sessionState = authenticated
   → очистка пароля и account view
 ```
 
@@ -53,17 +53,17 @@ Login bootstrap получает гостевой или текущий поль
 
 ## Восстановление и выход
 
-При запуске `App` вызывает `AuthSession.restore()`:
+При запуске `App` вызывает `AuthSessionService.restoreSession()`:
 
 - `GET /api/auth/me` → `200`: сохраняется только public identity.
 - `401`: подтверждено guest-состояние.
 - Сеть, `500`, некорректное тело: результат неизвестен, состояние `error`, а не фиктивный guest. На `/login` есть **Check session**, которая безопасно повторяет GET.
 
-`AuthSession` хранит состояния unknown/loading/anonymous/authenticated/error и readonly busy signal. Повторные restore объединяются; restore и auth-mutation не выполняются параллельно внутри сервиса. Поэтому поздний `/me` не может перезаписать результат нового login/logout.
+`AuthSessionService` хранит состояния unknown/loading/anonymous/authenticated/error и readonly `isAuthOperationInProgress` signal. Повторные restore объединяются; restore и auth-mutation не выполняются параллельно внутри сервиса. Поэтому поздний `/me` не может перезаписать результат нового login/logout.
 
 Sign out делает `GET csrf → POST logout`. Только подтверждённый `204` переводит state в anonymous. При потерянном ответе исход неизвестен — его можно проверить `/me`, не повторяя POST автоматически. Неопределённый login восстанавливается аналогично.
 
-Login-запрос принадлежит singleton AuthSession, а не времени жизни страницы. При уходе со страницы ограниченный HTTP-запрос продолжает работать и обновляет глобальную identity; уничтоженный компонент больше не меняет свои UI-поля. Отмена подписки не могла бы гарантировать отмену уже выполненного сервером входа.
+Login-запрос принадлежит singleton AuthSessionService, а не времени жизни страницы. При уходе со страницы ограниченный HTTP-запрос продолжает работать и обновляет глобальную identity; уничтоженный компонент больше не меняет свои UI-поля. Отмена подписки не могла бы гарантировать отмену уже выполненного сервером входа.
 
 Состояние UI — последнее серверное подтверждение, не право доступа. Перезагрузка браузера создаёт новый service и спрашивает `/me`. Между вкладками автоматической синхронизации пока нет, нет и таймера истечения/общего `401`-interceptor для будущих task API. Cookie ticket по-прежнему истекает через восемь часов, logout не отзывает независимо сохранённые копии.
 
@@ -93,6 +93,6 @@ Login-запрос принадлежит singleton AuthSession, а не вре�
 
 Из `frontend`: `npm test -- --watch=false` и `npm run build`.
 
-Добавлены `auth-login-api.spec.ts`, `auth-session.spec.ts`, `login/login.spec.ts`, `login/login-error.spec.ts`. Существующие App/routes/Register tests обновлены. Проверяются DTO и статусы, CSRF-порядок, password preservation, malformed responses, /me 401 vs network, serialization, ambiguous outcomes, form feedback/focus, duplicate submits, logout и уход со страницы.
+Current specs: `testing/auth-api.service.spec.ts`, `testing/auth-xsrf.integration.spec.ts`, `testing/auth-session.service.spec.ts`, `testing/login-page.component.spec.ts`, and `testing/login-error.parser.spec.ts`. API scenarios were consolidated during refactoring stage 2.4; cookie/header checks have their own integration spec. App/routes/Register tests cover cooperating UI behavior. Checks include DTOs/statuses, CSRF ordering, password preservation, malformed responses, /me 401 versus network errors, serialization, ambiguous outcomes, form feedback/focus, duplicate submissions, logout, and navigation away. HTTP responses are simulated, not obtained from a live backend.
 
 HttpTestingController моделирует API и Set-Cookie: это не доказательство браузерного сохранения cookie или live SQL Server connectivity. AXE/браузерный E2E в этом этапе не запускались.

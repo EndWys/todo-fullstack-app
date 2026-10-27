@@ -73,7 +73,7 @@ Login изменяет идентичность браузера, поэтому
 - `backend/src/TodoApp.Api/Setup/WebApplicationSetup.cs` — порядок middleware и регистрация endpoint.
 - `backend/src/TodoApp.Api/Setup/SwaggerSetup.cs` — подготовка токена браузерным Swagger без исключения из серверной проверки.
 - `frontend/src/app/app.config.ts` — настройка имени cookie для встроенного Angular XSRF-interceptor.
-- `frontend/src/app/features/auth/auth-api.ts` — bootstrap, затем POST через `switchMap`. Если bootstrap неуспешен, POST не отправляется.
+- `frontend/src/app/features/auth/auth-api.service.ts` — bootstrap, затем POST через `switchMap`. Если bootstrap неуспешен, POST не отправляется.
 - `frontend/angular.json` — HTTPS dev server; запросы `/api` остаются same-origin благодаря proxy.
 
 ## Проверка и границы

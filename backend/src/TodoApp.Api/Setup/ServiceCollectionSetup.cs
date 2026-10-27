@@ -8,6 +8,10 @@ using TodoApp.Infrastructure.Persistence;
 
 using TodoApp.Application.Features.Auth.Login;
 using TodoApp.Infrastructure.Features.Auth.Security;
+using TodoApp.Application.Features.Tasks.Abstractions;
+using TodoApp.Application.Features.Tasks.CreateTask;
+using TodoApp.Application.Features.Tasks.GetTasks;
+using TodoApp.Infrastructure.Features.Tasks.Persistence;
 
 namespace TodoApp.Api.Setup;
 
@@ -28,6 +32,10 @@ public static class ServiceCollectionSetup
         services.AddSingleton<IDummyPasswordHash, DummyPasswordHash>();
         services.AddScoped<RegisterHandler>();
         services.AddScoped<LoginHandler>();
+        services.AddScoped<ITaskRepository, TaskRepository>();
+        services.AddScoped<CreateTaskHandler>();
+        services.AddScoped<GetTasksHandler>();
+        services.AddSingleton(TimeProvider.System);
 
         services.AddAppAuthentication();
         services.AddAppAntiforgery();

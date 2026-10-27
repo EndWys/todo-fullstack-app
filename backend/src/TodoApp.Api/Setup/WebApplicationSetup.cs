@@ -4,6 +4,8 @@ using TodoApp.Api.Features.Auth.Me;
 using TodoApp.Api.Features.Auth.Logout;
 using TodoApp.Api.Features.Auth.Csrf;
 using TodoApp.Api.Middleware;
+using TodoApp.Api.Features.Tasks.CreateTask;
+using TodoApp.Api.Features.Tasks.GetTasks;
 
 namespace TodoApp.Api.Setup;
 
@@ -17,6 +19,7 @@ public static class WebApplicationSetup
             app.UseSwaggerUI(SwaggerSetup.Configure);
         }
 
+        app.UseMiddleware<TasksNoStoreMiddleware>();
         app.UseExceptionHandler();
         app.UseHttpsRedirection();
         app.UseAuthentication();
@@ -33,6 +36,8 @@ public static class WebApplicationSetup
         MeEndpoint.Map(app);
         LogoutEndpoint.Map(app);
         CsrfEndpoint.Map(app);
+        CreateTaskEndpoint.Map(app);
+        GetTasksEndpoint.Map(app);
         return app;
     }
 }

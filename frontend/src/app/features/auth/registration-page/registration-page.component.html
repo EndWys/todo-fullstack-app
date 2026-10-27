@@ -1,0 +1,99 @@
+<section aria-labelledby="register-title">
+  <h1 id="register-title" class="h2 mb-3">Create an account</h1>
+  <p id="registration-note" class="text-body-secondary mb-4">
+    Create your TodoApp account. Registration does not sign you in automatically.
+  </p>
+
+  <form
+    novalidate
+    aria-describedby="registration-note"
+    (submit)="submitRegistration($event)"
+    (input)="clearRegistrationSuccess()"
+    [attr.aria-busy]="registrationForm().submitting()"
+  >
+    <fieldset [disabled]="registrationForm().submitting()" class="border-0 p-0 m-0">
+      <legend class="visually-hidden">Account details</legend>
+      <div class="mb-3">
+        <label for="email" class="form-label">Email</label>
+        <input
+          id="email"
+          type="email"
+          autocomplete="email"
+          autocapitalize="none"
+          spellcheck="false"
+          class="form-control"
+          [formField]="registrationForm.email"
+          (blur)="normalizeRegistrationEmail()"
+          [class.is-invalid]="shouldShowEmailErrors()"
+          [attr.aria-invalid]="shouldShowEmailErrors()"
+          [attr.aria-describedby]="getEmailDescriptionId()"
+        />
+
+        @if (shouldShowEmailErrors()) {
+          <div id="email-errors" class="invalid-feedback" aria-live="polite">
+            @for (
+              emailValidationError of registrationForm.email().errors();
+              track emailValidationError.kind
+            ) {
+              <p class="mb-0">{{ emailValidationError.message }}</p>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="mb-4">
+        <label for="password" class="form-label">Password</label>
+        <input
+          id="password"
+          type="password"
+          autocomplete="new-password"
+          class="form-control"
+          [formField]="registrationForm.password"
+          [class.is-invalid]="shouldShowPasswordErrors()"
+          [attr.aria-invalid]="shouldShowPasswordErrors()"
+          [attr.aria-describedby]="getPasswordDescriptionIds()"
+        />
+        <div id="password-help" class="form-text">
+          Use {{ registrationPasswordMinCodePoints }}–{{
+            registrationPasswordMaxCodePoints
+          }}
+          characters. Spaces are allowed, but the password cannot be only whitespace. Current
+          length: {{ passwordCodePointCount() }}.
+        </div>
+
+        @if (shouldShowPasswordErrors()) {
+          <div id="password-errors" class="invalid-feedback" aria-live="polite">
+            @for (
+              passwordValidationError of registrationForm.password().errors();
+              track passwordValidationError.kind
+            ) {
+              <p class="mb-0">{{ passwordValidationError.message }}</p>
+            }
+          </div>
+        }
+      </div>
+    </fieldset>
+
+    <button type="submit" class="btn btn-primary" [disabled]="registrationForm().submitting()">
+      @if (registrationForm().submitting()) {
+        Creating account…
+      } @else {
+        Create account
+      }
+    </button>
+
+    @for (
+      registrationRequestError of registrationForm().errors();
+      track registrationRequestError.kind
+    ) {
+      <p class="mt-3 mb-0 text-danger" role="alert">{{ registrationRequestError.message }}</p>
+    }
+
+    @if (registeredEmail()) {
+      <p class="mt-3 mb-0" role="status">
+        Account created for {{ registeredEmail() }}. Registration does not sign you in
+        automatically. <a routerLink="/login">Sign in</a>.
+      </p>
+    }
+  </form>
+</section>

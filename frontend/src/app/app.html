@@ -7,13 +7,23 @@
     <a class="fs-4 fw-semibold text-decoration-none text-body" routerLink="/">TodoApp</a>
 
     <nav aria-label="Main navigation" class="d-flex gap-3">
+      @if (session.authenticatedUser()) {
+        <a
+          class="nav-link"
+          routerLink="/tasks"
+          routerLinkActive="fw-semibold"
+          ariaCurrentWhenActive="page"
+        >
+          My tasks
+        </a>
+      }
       <a
         class="nav-link"
         routerLink="/login"
         routerLinkActive="fw-semibold"
         ariaCurrentWhenActive="page"
       >
-        {{ session.user() ? 'Account' : 'Sign in' }}
+        {{ session.authenticatedUser() ? 'Account' : 'Sign in' }}
       </a>
       <a
         class="nav-link"

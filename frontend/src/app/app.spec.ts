@@ -28,6 +28,7 @@ describe('App', () => {
     expect(element.querySelector('header')?.textContent).toContain('TodoApp');
     expect(element.querySelector('nav a[href="/register"]')).not.toBeNull();
     expect(element.querySelector('nav a[href="/login"]')).not.toBeNull();
+    expect(element.querySelector('nav a[href="/tasks"]')).toBeNull();
     expect(element.querySelector('main router-outlet')).not.toBeNull();
   });
 
@@ -55,5 +56,6 @@ describe('App', () => {
     await fixture.whenStable();
     const element: HTMLElement = fixture.nativeElement;
     expect(element.querySelector('nav a[href="/login"]')?.textContent?.trim()).toBe('Account');
+    expect(element.querySelector('nav a[href="/tasks"]')?.textContent?.trim()).toBe('My tasks');
   });
 });
