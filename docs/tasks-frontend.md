@@ -1,10 +1,12 @@
 # Angular Tasks: маршрут, доступ и список
 
-## Status 2026-10-26
+## Status 2026-10-27
 
-The lazy `/tasks` page includes navigation, access guard, session-expiry handling, first-page GET, and a separate item component. Creation is now implemented with a Signal Form, shared CSRF bootstrap, validated POST, field/unconfirmed errors, and post-success list refresh. Loading/empty/error and explicit refresh/retry remain. Pagination controls, editing, search, and categories are not implemented. See [creation flow and verification](task-creation-frontend.md). The backend contract is unchanged; the full first slice still needs pagination UI and manual live acceptance.
+The lazy `/tasks` page includes navigation, access guard, session-expiry handling, server-page GET, and a separate item component. Creation uses a Signal Form, shared CSRF bootstrap, validated POST, field/unconfirmed errors, and post-success list refresh. URL-driven pagination now supports First/Previous/Next/Last and sizes 10/20/50. Loading/empty/error and explicit refresh/retry remain. Editing, search, and categories are not implemented. See [creation](task-creation-frontend.md) and [pagination rules, responsibilities, and acceptance](tasks-pagination-frontend.md). The backend contract is unchanged; live acceptance of the new pagination remains a separate check.
 
 ## Разделение ответственности
+
+The naming/structure notes below record earlier implementation stages. Current URL parsing, request selection, pagination component boundaries, and creation refresh behavior are described in [pagination responsibilities](tasks-pagination-frontend.md#responsibilities); there is no longer a fixed `INITIAL_TASK_LIST_REQUEST` or first-page-only response validator.
 
 ### Имена файлов
 
@@ -65,7 +67,7 @@ Login credential `401`, другие API и внешние URL не входят
 
 До подтверждения identity запрос не отправляется. При loading/reloading старые карточки скрыты; malformed response/неожиданный success status показывается как безопасная ошибка, не как пустой успех. Refresh/retry делает только один GET по явному клику; во время чтения кнопка отключена. Error details, SQL и raw response не выводятся. Карточки показывают Created/Completed в локальном часовом поясе браузера, сохраняя исходную UTC строку в datetime.
 
-Пока UI ограничен первой страницей из 20 задач. Показывается Showing X of Y tasks; если totalCount больше pageSize, есть явное пояснение ограничения. Не загружаем все задачи и не обрезаем их клиентским фильтром. После подключения пагинации нужно сохранить серверный owner predicate и правила [HTTP-контракта](tasks-http-contract.md).
+The UI now requests the page selected by URL `page`/`pageSize`, renders real pagination controls, and restores the view on Back/Forward. It never fetches all tasks for client-side slicing. Owner isolation and the existing [HTTP contract](tasks-http-contract.md) remain server responsibilities. See [pagination edge cases and acceptance](tasks-pagination-frontend.md).
 
 ## Проверки
 

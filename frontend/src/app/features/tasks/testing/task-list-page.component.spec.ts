@@ -27,7 +27,8 @@ describe('Task list page presentation boundary', () => {
   const taskListDataServiceStub = {
     taskListLoadState: taskListLoadStateSignal.asReadonly(),
     reloadTaskList: vi.fn(),
-  } satisfies Pick<TaskListDataService, 'taskListLoadState' | 'reloadTaskList'>;
+    setPagination: vi.fn(),
+  } satisfies Pick<TaskListDataService, 'taskListLoadState' | 'reloadTaskList' | 'setPagination'>;
   let componentFixture: ComponentFixture<TaskListPageComponent>;
   let hostElement: HTMLElement;
 
@@ -141,7 +142,7 @@ describe('Tasks list page', () => {
     httpTestingController.expectNone('/api/auth/csrf');
   });
 
-  it('shows the server order, an explicit page limit and no description', async () => {
+  it('shows the server order and real page navigation without description', async () => {
     const pendingTaskListRequest = await mountTaskListPage();
     const secondTaskSummary = {
       ...sampleTaskSummary,
@@ -159,7 +160,8 @@ describe('Tasks list page', () => {
       ),
     ).toEqual([sampleTaskSummary.title, 'Second']);
     expect(hostElement.textContent).toContain('Showing 2 of 41 tasks.');
-    expect(hostElement.textContent).toContain('Only the first page (up to 20 tasks) is shown');
+    expect(hostElement.textContent).toContain('Page 1 of 3');
+    expect(hostElement.querySelector<HTMLSelectElement>('#task-page-size')?.value).toBe('20');
   });
 
   it('shows a successful empty state, not an error', async () => {
@@ -326,7 +328,8 @@ describe('Task list page size explanation', () => {
         pageData: { tasks: [], totalCount: 51, page: 1, pageSize: 50 },
       }).asReadonly(),
       reloadTaskList: vi.fn(),
-    } satisfies Pick<TaskListDataService, 'taskListLoadState' | 'reloadTaskList'>;
+      setPagination: vi.fn(),
+    } satisfies Pick<TaskListDataService, 'taskListLoadState' | 'reloadTaskList' | 'setPagination'>;
 
     TestBed.configureTestingModule({
       providers: [
@@ -351,7 +354,7 @@ describe('Task list page size explanation', () => {
     await componentFixture.whenStable();
     const hostElement: HTMLElement = componentFixture.nativeElement;
 
-    expect(hostElement.textContent).toContain('Only the first page (up to 50 tasks) is shown');
-    expect(hostElement.textContent).not.toContain('up to 20 tasks');
+    expect(hostElement.querySelector<HTMLSelectElement>('#task-page-size')?.value).toBe('50');
+    expect(hostElement.textContent).toContain('Page 1 of 2');
   });
 });

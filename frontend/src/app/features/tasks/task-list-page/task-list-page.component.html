@@ -10,7 +10,9 @@
       <button
         type="button"
         class="btn btn-outline-primary"
-        [disabled]="currentTaskListLoadState.status === 'loading'"
+        [disabled]="
+          currentTaskListLoadState.status === 'loading' || paginationState().status === 'invalid'
+        "
         aria-controls="tasks-results"
         (click)="reloadTaskList()"
       >
@@ -23,8 +25,21 @@
     </div>
     <app-task-create-form
       (taskCreated)="refreshTaskListAfterCreation()"
-      (taskListRefreshRequested)="refreshTaskListAfterCreation()"
+      (taskListRefreshRequested)="refreshCurrentTaskPage()"
     />
+    @if (navigationError(); as message) {
+      <p class="alert alert-danger" role="alert">{{ message }}</p>
+    }
+    @if (paginationState(); as currentPaginationState) {
+      @if (currentPaginationState.status === 'invalid') {
+        <div class="alert alert-danger" role="alert">
+          <p>{{ currentPaginationState.message }}</p>
+          <button type="button" class="btn btn-outline-primary" (click)="resetTaskPagination()">
+            Reset pagination
+          </button>
+        </div>
+      }
+    }
     <div id="tasks-results" [attr.aria-busy]="currentTaskListLoadState.status === 'loading'">
       @switch (currentTaskListLoadState.status) {
         @case ('loading') {
@@ -40,7 +55,11 @@
           @let visibleTaskCount = pageData.tasks.length;
           <p role="status">Showing {{ visibleTaskCount }} of {{ pageData.totalCount }} tasks.</p>
           @if (visibleTaskCount === 0) {
-            <p>No tasks to display.</p>
+            @if (pageData.totalCount === 0 && pageData.page === firstTaskPage) {
+              <p>No tasks to display.</p>
+            } @else {
+              <p>No tasks on this page. Use the page controls to return to an available page.</p>
+            }
           } @else {
             <ul class="list-group" aria-label="Tasks">
               @for (taskSummary of pageData.tasks; track taskSummary.id) {
@@ -50,12 +69,12 @@
               }
             </ul>
           }
-          @if (pageData.totalCount > pageData.pageSize) {
-            <p class="mt-3 text-body-secondary">
-              Only the first page (up to {{ pageData.pageSize }} tasks) is shown. Page navigation
-              will be added next.
-            </p>
-          }
+          <app-task-list-pagination
+            [pagination]="pageData"
+            [totalCount]="pageData.totalCount"
+            (pageRequested)="changeTaskPage($event)"
+            (pageSizeRequested)="changeTaskPageSize($event)"
+          />
         }
       }
     </div>

@@ -2,28 +2,42 @@ import { httpResource, HttpResourceRequest, HttpStatusCode } from '@angular/comm
 import { computed, inject, Service, signal } from '@angular/core';
 import { AuthSessionService } from '../../auth/auth-session.service';
 import { parseTaskListResponse } from './task-list-response.parser';
-import type { TaskListLoadState, TaskListPageData } from '../task-list.models';
+import type { TaskListLoadState, TaskListPagination } from '../task-list.models';
 import { DEFAULT_TASK_PAGE_SIZE, FIRST_TASK_PAGE } from '../task-list-pagination.constants';
 
 const TASK_LIST_REQUEST_TIMEOUT_MS = 15_000;
-
-const INITIAL_TASK_LIST_REQUEST: HttpResourceRequest = {
-  url: '/api/tasks',
-  params: { page: FIRST_TASK_PAGE, pageSize: DEFAULT_TASK_PAGE_SIZE },
-  timeout: TASK_LIST_REQUEST_TIMEOUT_MS,
-  cache: 'no-store',
-};
 
 // A separate read model for each Tasks page, not a singleton cache shared across accounts.
 @Service({ autoProvided: false })
 export class TaskListDataService {
   private readonly authSession = inject(AuthSessionService);
-  private readonly taskListRequest = signal(INITIAL_TASK_LIST_REQUEST);
+  private readonly requestedPagination = signal<TaskListPagination | undefined>({
+    page: FIRST_TASK_PAGE,
+    pageSize: DEFAULT_TASK_PAGE_SIZE,
+  });
   private readonly taskListResource = httpResource(() => this.getAuthenticatedTaskListRequest(), {
-    parse: parseFirstTaskPageResponse,
+    parse: parseTaskListResponse,
   });
 
   readonly taskListLoadState = computed<TaskListLoadState>(() => this.getTaskListLoadState());
+
+  setPagination(pagination: TaskListPagination | undefined): void {
+    const currentPagination = this.requestedPagination();
+    if (
+      currentPagination?.page === pagination?.page &&
+      currentPagination?.pageSize === pagination?.pageSize
+    ) {
+      return;
+    }
+
+    this.requestedPagination.set(pagination);
+
+    if (!pagination) {
+      // Explicitly abort a pending GET: the installed resource implementation skips
+      // its loader on an undefined request without aborting the previous load.
+      this.taskListResource.set(undefined);
+    }
+  }
 
   reloadTaskList(): void {
     if (!this.authSession.authenticatedUser()) {
@@ -37,14 +51,19 @@ export class TaskListDataService {
     this.taskListResource.reload();
   }
 
-  refreshAfterTaskCreation(): void {
+  refreshCurrentPage(): void {
     // A new request reference invalidates even an in-flight pre-mutation read.
     // Do not add a client-only revision as an unsupported HTTP query parameter.
     if (!this.authSession.authenticatedUser()) {
       return;
     }
 
-    this.taskListRequest.set({ ...INITIAL_TASK_LIST_REQUEST });
+    const pagination = this.requestedPagination();
+    if (!pagination) {
+      return;
+    }
+
+    this.requestedPagination.set({ ...pagination });
   }
 
   private getAuthenticatedTaskListRequest(): HttpResourceRequest | undefined {
@@ -52,12 +71,27 @@ export class TaskListDataService {
       return undefined;
     }
 
-    return this.taskListRequest();
+    const pagination = this.requestedPagination();
+    if (!pagination) {
+      return undefined;
+    }
+
+    return {
+      url: '/api/tasks',
+      params: { page: pagination.page, pageSize: pagination.pageSize },
+      timeout: TASK_LIST_REQUEST_TIMEOUT_MS,
+      cache: 'no-store',
+    };
   }
 
   private getTaskListLoadState(): TaskListLoadState {
     // Hide the previous user's data immediately, even before resource cancellation runs.
     if (!this.authSession.authenticatedUser()) {
+      return { status: 'idle' };
+    }
+
+    const pagination = this.requestedPagination();
+    if (!pagination) {
       return { status: 'idle' };
     }
 
@@ -77,20 +111,11 @@ export class TaskListDataService {
       return { status: 'error' };
     }
 
-    return { status: 'ready', pageData: this.taskListResource.value() };
+    const pageData = this.taskListResource.value();
+    if (pageData.page !== pagination.page || pageData.pageSize !== pagination.pageSize) {
+      return { status: 'error' };
+    }
+
+    return { status: 'ready', pageData };
   }
-}
-
-function parseFirstTaskPageResponse(responseBody: unknown): TaskListPageData {
-  const parsedPageData = parseTaskListResponse(responseBody);
-
-  if (parsedPageData.page !== FIRST_TASK_PAGE) {
-    throw new Error('Unexpected tasks page.');
-  }
-
-  if (parsedPageData.pageSize !== DEFAULT_TASK_PAGE_SIZE) {
-    throw new Error('Unexpected tasks page.');
-  }
-
-  return parsedPageData;
 }

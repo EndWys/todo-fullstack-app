@@ -1,0 +1,60 @@
+<nav aria-label="Task list pagination" class="d-flex flex-wrap align-items-center gap-3 mt-3">
+  <div class="d-flex align-items-center gap-2">
+    <label for="task-page-size" class="form-label mb-0">Tasks per page</label>
+    <select
+      #pageSizeSelect
+      id="task-page-size"
+      class="form-select w-auto"
+      [disabled]="disabled()"
+      aria-controls="tasks-results"
+      (change)="requestPageSize(pageSizeSelect.value)"
+    >
+      @for (pageSize of pageSizeOptions; track pageSize) {
+        <option [value]="pageSize" [selected]="pageSize === pagination().pageSize">
+          {{ pageSize }}
+        </option>
+      }
+    </select>
+  </div>
+  @if (totalPages() > 0 && pagination().page <= totalPages()) {
+    <span aria-current="page">Page {{ pagination().page }} of {{ totalPages() }}</span>
+  }
+  <div class="btn-group" role="group" aria-label="Choose task page">
+    <button
+      type="button"
+      class="btn btn-outline-primary"
+      [disabled]="isPreviousDisabled()"
+      aria-controls="tasks-results"
+      (click)="requestPage(firstPage)"
+    >
+      First
+    </button>
+    <button
+      type="button"
+      class="btn btn-outline-primary"
+      [disabled]="isPreviousDisabled()"
+      aria-controls="tasks-results"
+      (click)="requestPreviousPage()"
+    >
+      Previous
+    </button>
+    <button
+      type="button"
+      class="btn btn-outline-primary"
+      [disabled]="isNextDisabled()"
+      aria-controls="tasks-results"
+      (click)="requestPage(pagination().page + 1)"
+    >
+      Next
+    </button>
+    <button
+      type="button"
+      class="btn btn-outline-primary"
+      [disabled]="isLastDisabled()"
+      aria-controls="tasks-results"
+      (click)="requestPage(lastAvailablePage())"
+    >
+      Last
+    </button>
+  </div>
+</nav>

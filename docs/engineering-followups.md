@@ -182,11 +182,11 @@
 
 ## 24. Tasks frontend: первая страница и размер bundle
 
-**Сейчас:** TasksList — component-scoped read model на httpResource, TaskItem — чистый компонент отображения. Читается page=1/pageSize=20; показываются items/totalCount и пояснение ограничения при большем count. Refresh/retry запускается явно, мутации не повторяются. Runtime parse не дублирует Domain-валидацию создания, но защищает UI от неизвестной структуры, приоритетов, непригодных дат и дублирующихся ключей. При смене identity чтение отменяется/обновляется, старые карточки скрываются. 214 frontend-тестов и production build прошли, включая resource-backed 401 → login.
+**Current approach:** `TaskListDataService` is a component-scoped read model; the item and pagination components are presentational. URL-driven server pagination is now implemented, replacing the first-page-only limitation. Refresh/retry is explicit, mutations are not retried, and runtime response checks protect the view. See [pagination behavior and acceptance](tasks-pagination-frontend.md).
 
-**Ограничение:** UI ещё не даёт доступа к страницам после первой; это незавершённый шаг, а не полная пагинация. Список скрывается на время refresh, не показывается как гарантированно актуальный кеш. Build выдаёт новый warning: initial raw bundle 521.97 kB против warning budget 500 kB (hard limit 1 MB не превышен). Budget не повышался; точный вклад зависимостей не анализировался. Sass deprecation из пункта 8 остаётся.
+**Limitation:** the list hides old cards while loading; it is not a guaranteed-current cache or transactional snapshot. The verified pagination build has an initial bundle of 532.07 kB against the unchanged 500 kB warning budget (1 MB hard limit). Dependency contribution has not been analyzed. The Sass deprecation from item 8 remains.
 
-**Когда вернуться:** при подзадаче пагинации добавить выбор page/pageSize по принятому HTTP-контракту, не загружать все задачи в браузер. Перед публикацией измерить состав initial/shared chunks и устранить превышение либо отдельно обосновать бюджет. Не скрывать предупреждение повышением порога без анализа. Перед объявлением full-stack готовности проверить живой Angular/API/SQL Server сценарий и доступность в браузере; текущие jsdom/HTTP mock проверки этого не доказывают.
+**Revisit when:** before publication, measure initial/shared chunks and resolve the budget warning or justify a change independently; do not hide it by raising the limit without analysis. Verify the new pagination through a live browser/API/SQL Server scenario and accessibility checks. Simulated HTTP and router-history tests do not prove that acceptance.
 
 **Отдельная тема для изучения — объём начальной загрузки:**
 
@@ -248,7 +248,7 @@
 
 **Readability refactor (2026-10-27):** creation orchestration, session checks, form submission/focus, and response/error readers now use named steps and sequential guards instead of nested callback bodies, compound conditions, or nested ternaries. The cold-observable/subscription boundary and three session checks are preserved. All 314 tests in 25 files, types, lint, formatting, and production build passed. A temporary differential check found no differences across 133,861 old/new pure-function outcomes and was removed. Existing assertions, HTTP behavior, and lifecycle rules remain unchanged. Initial bundle is 530.96 kB with existing warnings; no browser/AXE/live API checks were run.
 
-**Revisit when:** safe automatic retries, cross-tab account switching, background mutation ownership, or exactly-once UX become requirements. Agree idempotency keys and server retention semantics before implementing them; do not infer failure from request cancellation. Pagination UI and live browser/API/SQL Server acceptance remain unfinished parts of the first slice, not optional hardening.
+**Revisit when:** safe automatic retries, cross-tab account switching, background mutation ownership, or exactly-once UX become requirements. Agree idempotency keys and server retention semantics before implementing them; do not infer failure from request cancellation. Pagination UI is now implemented; live browser/API/SQL Server acceptance of the new pagination remains a separate check, not optional hardening. See [pagination behavior](tasks-pagination-frontend.md).
 
 **Verification:** 314 frontend tests passed in 25 files; type checks, full lint, affected-file formatting, and production build passed. The 530.90 kB initial-bundle warning and Sass deprecation remain; budgets/dependencies were unchanged. Final checks completed after preliminary native process failures and a stopped verified stalled test attempt. Live browser/API/SQL Server and AXE were not run. Backend code and database state were not changed.
 

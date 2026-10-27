@@ -2,7 +2,7 @@
 
 ## Implemented scope
 
-The authenticated `/tasks` page embeds a creation form with title, optional description, and priority. It creates through the existing POST contract, then refreshes the first server page. Pagination controls, editing, completion, deletion, and categories are separate work.
+The authenticated `/tasks` page embeds a creation form with title, optional description, and priority. It creates through the existing POST contract, then refreshes the first server page. URL-driven [pagination](tasks-pagination-frontend.md) is implemented; editing, completion, deletion, and categories are separate work.
 
 No backend endpoint, database schema, migration, dependency, or public HTTP contract changes are required. Successful creation means a validated `201` response, not a local optimistic insertion. Refresh failure does not undo or relabel a confirmed creation.
 
@@ -19,7 +19,7 @@ Full entry-point paths below are relative to `frontend/src/app/`. Bare creation 
 - `task-creation-error.parser.ts`: accepts only known, well-formed field errors; distinguishes CSRF/session failures from an unconfirmed outcome. Raw technical details are not displayed.
 - `task-creation-response.parser.ts`: validates the saved task including nullable description and active initial state. It uses shared `features/tasks/task-summary.parser.ts`, also consumed by the list parser, without changing existing list-response acceptance rules.
 - `core/security/csrf-token.service.ts`: shared, stateless token bootstrap for Auth and Tasks. It requires `204`, disables caching, and bounds each bootstrap request. Existing Auth operations now delegate here; they preserve their HTTP/error/lifecycle behavior.
-- `features/tasks/task-list-page/task-list-data.service.ts`: a new request reference explicitly invalidates pre-mutation reads, including an outstanding GET, and starts a fresh first-page read. No unsupported revision query parameter is sent. Ordinary refresh still suppresses duplicate clicks while loading.
+- `features/tasks/task-list-page/task-list-data.service.ts`: a new pagination-request reference explicitly invalidates pre-mutation reads, including an outstanding GET. Confirmed creation refreshes page 1 with the retained page size, through URL navigation when necessary. Read-only recovery refreshes the current page instead. No unsupported revision query parameter is sent. Ordinary refresh still suppresses duplicate clicks while loading.
 - `features/tasks/task-list-page/task-list-page.component.ts` / `.html`: embeds the form, handles outputs, requests list refresh, and returns focus to the page heading. The card remains display-only.
 
 ## Call flow
@@ -40,7 +40,7 @@ submitTaskCreation
   -> existing endpoint -> handler -> repository -> SQL Server
   -> 201 + validated saved state
   -> clear form + taskCreated
-  -> page -> refreshAfterTaskCreation
+  -> page -> refreshTaskListAfterCreation
   -> cancel obsolete GET if necessary -> GET first page -> render cards
 ```
 

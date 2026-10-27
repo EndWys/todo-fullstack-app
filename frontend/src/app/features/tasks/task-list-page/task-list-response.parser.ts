@@ -1,8 +1,10 @@
 import { parseTaskSummary } from '../task-summary.parser';
 import type { TaskListPageData, TaskSummary } from '../task-list.models';
-import { FIRST_TASK_PAGE, SUPPORTED_TASK_PAGE_SIZES } from '../task-list-pagination.constants';
-
-const MAX_INT32 = 2_147_483_647;
+import {
+  FIRST_TASK_PAGE,
+  MAX_TASK_LIST_INT32,
+  SUPPORTED_TASK_PAGE_SIZES,
+} from '../task-list-pagination.constants';
 
 export function parseTaskListResponse(responseBody: unknown): TaskListPageData {
   if (!isJsonObject(responseBody)) {
@@ -55,7 +57,7 @@ function readInt32AtLeast(candidateValue: unknown, minimumValue: number): number
     throwUnexpectedTasksResponse();
   }
 
-  if (candidateValue < minimumValue || candidateValue > MAX_INT32) {
+  if (candidateValue < minimumValue || candidateValue > MAX_TASK_LIST_INT32) {
     throwUnexpectedTasksResponse();
   }
 
